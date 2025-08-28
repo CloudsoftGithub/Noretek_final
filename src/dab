@@ -1,0 +1,24 @@
+CREATE DATABASE IF NOT EXISTS Noretek_Energy_db;
+
+USE Noretek_Energy_db;
+
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100),
+    email VARCHAR(100) UNIQUE,
+    phone VARCHAR(20),
+    address TEXT,
+    password VARCHAR(255), -- hashed password
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+if (role === "admin") {
+      const adminCount = await User.countDocuments({ role: "admin" });
+      if (adminCount >= 2) {
+        return NextResponse.json(
+          { message: "Admin limit reached" },
+          { status: 403 }
+        );
+      }
+    }
