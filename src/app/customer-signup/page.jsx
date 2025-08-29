@@ -92,7 +92,7 @@ export default function CustomerSignUp() {
         className="shadow-lg my-4 p-md-5 p-4 rounded w-100"
         style={{ maxWidth: 800 }}
       >
-        <h4 className="text-center titleColor font-monospace fw-bold text-uppercase">
+        <h4 className="text-center titleColor  fw-bold text-uppercase">
           Customer Sign Up
         </h4>
 
@@ -256,7 +256,7 @@ export default function CustomerSignUp() {
 
           <button
             type="submit"
-            className="btn  text-uppercase  font-monospace primaryColor w-100 shadow-none"
+            className="btn  text-uppercase  primaryColor w-100 shadow-none"
           >
            {submitting ? "Signing up..." : "Sign Up"}
           </button>

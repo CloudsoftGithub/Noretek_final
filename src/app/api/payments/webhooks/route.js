@@ -1,41 +1,32 @@
-// api/payments/webhooks/route.js
-import db from "@/lib/db"; // MongoDB connection
+// src/app/api/payments/webhooks/route.js
+import { NextResponse } from 'next/server';
+import connectDB from '@/lib/mongodb';
+import Payment from '@/models/Payment';
 
 export async function POST(request) {
   try {
+    await connectDB();
+    
     const payload = await request.json();
     console.log("📩 Paystack webhook received:", payload);
 
     if (payload.event === "charge.success") {
       const { reference, paid_at } = payload.data;
 
-      const client = await db;
-      const paymentsCollection = client.db().collection("payments");
-
-      const updateResult = await paymentsCollection.updateOne(
+      await Payment.findOneAndUpdate(
         { reference },
         {
-          $set: {
-            status: "success",
-            paid_at: paid_at ? new Date(paid_at) : new Date(),
-            updated_at: new Date(),
-          },
+          status: "success",
+          paid_at: paid_at || new Date()
         }
       );
 
-      if (updateResult.modifiedCount > 0) {
-        console.log("✅ Payment status updated via webhook");
-      } else {
-        console.log("⚠️ No matching payment found for reference:", reference);
-      }
+      console.log("✅ Payment status updated via webhook");
     }
 
-    return Response.json({ received: true });
+    return NextResponse.json({ received: true });
   } catch (error) {
     console.error("💥 Webhook error:", error);
-    return Response.json(
-      { error: "Webhook processing failed" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
   }
 }

@@ -88,7 +88,7 @@ export default function CalinavLayout() {
       {/* Sidebar/Navbar */}
       <aside style={{
         width: '250px',
-        background: '#1e1e2f',
+        background: '#023e8a',
         color: '#fff',
         padding: '2rem 1rem',
         display: 'flex',
@@ -134,7 +134,7 @@ export default function CalinavLayout() {
           )}
         </div>
 
-        <Link href="/" style={{ color: '#ccc', marginTop: 'auto' }}>
+        <Link href="/" style={{ color: '#ccc', marginTop: 'auto', textDecoratio:"none" }}>
           ← Back to Home
         </Link>
       </aside>
@@ -143,14 +143,14 @@ export default function CalinavLayout() {
       <main style={{ flexGrow: 1, padding: '2rem' }}>
         {/* Show Login Form */}
         {showLogin && !token && (
-          <div className="card mb-5 shadow" style={{ maxWidth: 400, margin: "0 auto" }}>
-            <div className="card-header bg-dark text-white text-center">
+          <div className="card mb-5 shadow-sm border-0" style={{ maxWidth: 500, margin: "0 auto" }}>
+            <div className="card-header primaryColor text-center">
               <h4>Login</h4>
             </div>
             <div className="card-body">
               <form onSubmit={handleLoginSubmit}>
                 <div className="mb-3">
-                  <label className="form-label">User ID</label>
+                  <label className="form-label ">User ID:</label>
                   <input
                     type="text"
                     className="form-control"
@@ -161,10 +161,10 @@ export default function CalinavLayout() {
                   />
                 </div>
                 <div className="mb-3">
-                  <label className="form-label">Password</label>
+                  <label className="form-label">Password:</label>
                   <input
                     type="password"
-                    className="form-control"
+                    className="form-control shadow-none"
                     name="password"
                     value={loginData.password}
                     onChange={handleLoginChange}
@@ -172,10 +172,10 @@ export default function CalinavLayout() {
                   />
                 </div>
                 <div className="mb-3">
-                  <label className="form-label">Company</label>
+                  <label className="form-label">Company:</label>
                   <input
                     type="text"
-                    className="form-control"
+                    className="form-control shadow-none"
                     name="company"
                     value={loginData.company}
                     onChange={handleLoginChange}
@@ -184,7 +184,7 @@ export default function CalinavLayout() {
                 </div>
                 <button
                   type="submit"
-                  className="btn btn-primary w-100"
+                  className="btn primaryColor w-100"
                   disabled={loginLoading}
                 >
                   {loginLoading ? "Logging in..." : "Login"}

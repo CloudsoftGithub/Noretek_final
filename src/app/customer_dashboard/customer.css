@@ -5,9 +5,12 @@
   --testColor:#040416;
   --hoverColor: #bbbbec;
   --softColor:#457b9186;
+  --praColor: #023e8a;
+  --ppColor: #023e8a;
+  --gradientBg: #b7e1fda7;
 }
 *{
-  font-family: poppins;
+  font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
 }
 body {
   background-color: var(--softColor);
@@ -135,4 +138,20 @@ body {
     left: 0;
     background-color: #0d6efd;
   }
+}
+.primaryColor {
+  background-color: var(--praColor) !important;
+  color: var(--WhiteColor) !important;
+}
+.primaryColor:hover {
+  background-color: var(--praColor);
+  color: var(--WhiteColor);
+  opacity: 0.8;
+}
+.titleColor {
+  color: var(--ppColor) !important;
+  font-weight: 700px;
+}
+.con{
+  background:  var(--gradientBg);
 }

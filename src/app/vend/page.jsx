@@ -357,9 +357,9 @@ export default function CustomerTokenPage() {
   };
 
   return (
-    <div className="container-fluid py-4" style={{ background: '#f8f9fa', minHeight: '100vh' }}>
+    <div className="container-fluid " style={{ background: '#f8f9fa', minHeight: '100vh' }}>
       {/* Navigation Bar */}
-      <nav className="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+      <nav className="navbar navbar-expand-lg navbar-dark primaryColor mb-4">
         <div className="container">
           <span className="navbar-brand fw-bold">
             <i className="fas fa-bolt me-2"></i>Noretek Energy Token Manager
@@ -386,16 +386,16 @@ export default function CustomerTokenPage() {
           <div className="row justify-content-center">
             <div className="col-md-6">
               <div className="card shadow">
-                <div className="card-header bg-primary text-white text-center">
+                <div className="card-header primaryColor text-center">
                   <h4>Login to Access System</h4>
                 </div>
                 <div className="card-body">
                   <form onSubmit={handleLogin}>
                     <div className="mb-3">
-                      <label className="form-label">User ID</label>
+                      <label className="form-label">User ID:</label>
                       <input
                         type="text"
-                        className="form-control"
+                        className="form-control shadow-none"
                         name="userId"
                         value={loginData.userId}
                         onChange={handleLoginChange}
@@ -404,10 +404,10 @@ export default function CustomerTokenPage() {
                       />
                     </div>
                     <div className="mb-3">
-                      <label className="form-label">Password</label>
+                      <label className="form-label">Password:</label>
                       <input
                         type="password"
-                        className="form-control"
+                        className="form-control shadow-none"
                         name="password"
                         value={loginData.password}
                         onChange={handleLoginChange}
@@ -416,7 +416,7 @@ export default function CustomerTokenPage() {
                       />
                     </div>
                     <div className="mb-3">
-                      <label className="form-label">Company</label>
+                      <label className="form-label">Company:</label>
                       <input
                         type="text"
                         className="form-control"
@@ -429,7 +429,7 @@ export default function CustomerTokenPage() {
                     </div>
                     <button
                       type="submit"
-                      className="btn btn-primary w-100"
+                      className="btn primaryColor w-100"
                       disabled={loading}
                     >
                       {loading ? (
@@ -455,7 +455,7 @@ export default function CustomerTokenPage() {
             <div className="row mb-4">
               <div className="col-md-3 mb-3">
                 <div className="card stats-card text-center">
-                  <i className="fas fa-users fa-2x text-primary mb-2"></i>
+                  <i className="fas fa-users fa-2x titleColor mb-2"></i>
                   <div className="stats-number">{customers.length}</div>
                   <div className="stats-label">Registered Customers</div>
                 </div>
@@ -498,7 +498,7 @@ export default function CustomerTokenPage() {
 
             {/* Customer Accounts Table */}
             <div className="card shadow">
-              <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+              <div className="card-header primaryColor d-flex justify-content-between align-items-center">
                 <h5 className="mb-0"><i className="fas fa-list-alt me-2"></i>Registered Customer Accounts</h5>
                 <button 
                   className="btn btn-outline-light btn-sm" 
@@ -511,7 +511,7 @@ export default function CustomerTokenPage() {
               <div className="card-body">
                 {loading && !showTokenModal && !showRechargeModal ? (
                   <div className="text-center my-5">
-                    <div className="spinner-border text-primary" role="status">
+                    <div className="spinner-border titleColor" role="status">
                       <span className="visually-hidden">Loading...</span>
                     </div>
                     <p className="mt-2">Loading customer accounts...</p>
@@ -522,13 +522,13 @@ export default function CustomerTokenPage() {
                       <table className="table table-hover">
                         <thead>
                           <tr>
-                            <th>Customer Name</th>
-                            <th>Meter Number</th>
-                            <th>Account Number</th>
-                            <th>Balance</th>
-                            <th>Status</th>
-                            <th>Last Update</th>
-                            <th>Actions</th>
+                            <th className="titleColor">Customer Name</th>
+                            <th className="titleColor">Meter Number</th>
+                            <th className="titleColor">Account Number</th>
+                            <th className="titleColor">Balance</th>
+                            <th className="titleColor">Status</th>
+                            <th className="titleColor">Last Update</th>
+                            <th className="titleColor">Actions</th>
                           </tr>
                         </thead>
                         <tbody>

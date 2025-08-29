@@ -288,14 +288,14 @@ export default function AccountPage() {
 
       {/* LOGIN FORM */}
       {!token && (
-        <div className="card mb-5 shadow">
-          <div className="card-header bg-dark text-white text-center">
+        <div className="card mb-5 shadow-none">
+          <div className="card-header primaryColor text-center">
             <h4>Login to Get Token</h4>
           </div>
           <div className="card-body">
             <form onSubmit={handleLoginSubmit}>
               <div className="mb-3">
-                <label className="form-label">User ID</label>
+                <label className="form-label">User ID:</label>
                 <input
                   type="text"
                   className="form-control"
@@ -306,7 +306,7 @@ export default function AccountPage() {
                 />
               </div>
               <div className="mb-3">
-                <label className="form-label">Password</label>
+                <label className="form-label">Password:</label>
                 <input
                   type="password"
                   className="form-control"
@@ -317,7 +317,7 @@ export default function AccountPage() {
                 />
               </div>
               <div className="mb-3">
-                <label className="form-label">Company</label>
+                <label className="form-label">Company:</label>
                 <input
                   type="text"
                   className="form-control"
@@ -344,8 +344,8 @@ export default function AccountPage() {
 
       {/* ACCOUNT FORM */}
       {token && (
-        <div className="card mb-5 shadow">
-          <div className="card-header bg-primary text-white text-center">
+        <div className="card mb-5 shadow-sm">
+          <div className="card-header primaryColor text-center">
             <h4>{isEditing ? "Edit Account" : "Create New Account"}</h4>
           </div>
           <div className="card-body">
@@ -362,7 +362,7 @@ export default function AccountPage() {
                   <label className="form-label">{label}</label>
                   <input
                     type={type}
-                    className="form-control"
+                    className="form-control shadow-none"
                     name={key}
                     value={formData[key] ?? ""}
                     onChange={handleChange}
@@ -374,7 +374,7 @@ export default function AccountPage() {
               <div className="col-12">
                 <button 
                   type="submit" 
-                  className="btn btn-success w-100"
+                  className="btn primaryColor w-100"
                   disabled={loading}
                 >
                   {loading ? "Processing..." : (isEditing ? "Update Account" : "Create Account")}
@@ -382,7 +382,7 @@ export default function AccountPage() {
                 {isEditing && (
                   <button 
                     type="button" 
-                    className="btn btn-secondary w-100 mt-2"
+                    className="btn primaryColor w-100 mt-2"
                     onClick={resetForm}
                     disabled={loading}
                   >
@@ -403,14 +403,14 @@ export default function AccountPage() {
       {/* ACCOUNT TABLE */}
       {token && (
         <div className="card shadow">
-          <div className="card-header bg-secondary text-white">
+          <div className="card-header primaryColor ">
             <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
               <h5 className="mb-0">Account Management</h5>
               <div className="d-flex flex-wrap gap-2">
                 <form onSubmit={handleSearch} className="d-flex">
                   <div className="input-group">
                     <select
-                      className="form-select"
+                      className="form-select shadow-none"
                       value={searchField}
                       onChange={(e) => setSearchField(e.target.value)}
                     >
@@ -420,18 +420,18 @@ export default function AccountPage() {
                     </select>
                     <input
                       type="text"
-                      className="form-control"
+                      className="form-control shadow-none"
                       placeholder={`Search by ${searchField.replace(/([A-Z])/g, ' $1').trim()}`}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
-                    <button className="btn btn-primary" type="submit">
+                    <button className="btn titleColor bg-light border-opacity-50 border" type="submit">
                       Search
                     </button>
                   </div>
                 </form>
                 <select
-                  className="form-select"
+                  className="form-select shadow-none"
                   value={`${sortField}:${sortOrder}`}
                   onChange={(e) => {
                     const [field, order] = e.target.value.split(':');
@@ -454,7 +454,7 @@ export default function AccountPage() {
           <div className="card-body table-responsive">
             {loading ? (
               <div className="text-center my-5">
-                <div className="spinner-border text-primary" role="status">
+                <div className="spinner-border titleColor" role="status">
                   <span className="visually-hidden">Loading...</span>
                 </div>
               </div>
@@ -463,25 +463,25 @@ export default function AccountPage() {
                 <table className="table table-bordered table-hover">
                   <thead>
                     <tr>
-                      <th onClick={() => handleSort("customerId")} className="cursor-pointer">
+                      <th onClick={() => handleSort("customerId")} className="cursor-pointer titleColor">
                         Customer ID {sortField === "customerId" && (
                           <span>{sortOrder === "asc" ? "↑" : "↓"}</span>
                         )}
                       </th>
-                      <th onClick={() => handleSort("meterId")} className="cursor-pointer">
+                      <th onClick={() => handleSort("meterId")} className="cursor-pointer titleColor">
                         Meter ID {sortField === "meterId" && (
                           <span>{sortOrder === "asc" ? "↑" : "↓"}</span>
                         )}
                       </th>
-                      <th>Site</th>
-                      <th onClick={() => handleSort("tariffId")} className="cursor-pointer">
+                      <th className=" titleColor">Site</th>
+                      <th onClick={() => handleSort("tariffId")} className="cursor-pointer titleColor">
                         Tariff ID {sortField === "tariffId" && (
                           <span>{sortOrder === "asc" ? "↑" : "↓"}</span>
                         )}
                       </th>
-                      <th>Remark</th>
-                      <th>Company</th>
-                      <th>Actions</th>
+                      <th className=" titleColor">Remark</th>
+                      <th className=" titleColor">Company</th>
+                      <th className=" titleColor">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -507,7 +507,7 @@ export default function AccountPage() {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="7" className="text-center py-4">
+                        <td colSpan="7" className="text-center text-muted display-5  py-4">
                           No accounts found
                         </td>
                       </tr>
@@ -524,7 +524,7 @@ export default function AccountPage() {
                   </div>
                   <div className="btn-group">
                     <button
-                      className="btn btn-outline-secondary"
+                      className="btn  primaryColor"
                       onClick={() => handlePageChange(pagination.pageNumber - 1)}
                       disabled={pagination.pageNumber === 1 || loading}
                     >
@@ -534,7 +534,7 @@ export default function AccountPage() {
                       Page {pagination.pageNumber} of {pagination.totalPages}
                     </span>
                     <button
-                      className="btn btn-outline-secondary"
+                      className="btn  primaryColor"
                       onClick={() => handlePageChange(pagination.pageNumber + 1)}
                       disabled={pagination.pageNumber === pagination.totalPages || loading}
                     >

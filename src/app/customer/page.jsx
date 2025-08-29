@@ -117,17 +117,17 @@ export default function CustomerPage() {
   return (
     <div className="container mt-5">
       {/* LOGIN FORM */}
-      <div className="card mb-5 shadow">
-        <div className="card-header bg-dark text-white text-center">
+      <div className="card mb-5 shadow-sm">
+        <div className="card-header primaryColor text-center">
           <h4>Login to Get Token</h4>
         </div>
-        <div className="card-body">
+        <div className="card-body primaryColor">
           <form onSubmit={handleLoginSubmit}>
             <div className="mb-3">
-              <label className="form-label">User ID</label>
+              <label className="form-label">User ID:</label>
               <input
                 type="text"
-                className="form-control"
+                className="form-control shadow-none"
                 name="userId"
                 value={loginData.userId}
                 onChange={handleLoginChange}
@@ -135,10 +135,10 @@ export default function CustomerPage() {
               />
             </div>
             <div className="mb-3">
-              <label className="form-label">Password</label>
+              <label className="form-label">Password:</label>
               <input
                 type="password"
-                className="form-control"
+                className="form-control shadow-none"
                 name="password"
                 value={loginData.password}
                 onChange={handleLoginChange}
@@ -146,10 +146,10 @@ export default function CustomerPage() {
               />
             </div>
             <div className="mb-3">
-              <label className="form-label">Company</label>
+              <label className="form-label">Company:</label>
               <input
                 type="text"
-                className="form-control"
+                className="form-control shadow-none"
                 name="company"
                 value={loginData.company}
                 onChange={handleLoginChange}
@@ -158,7 +158,7 @@ export default function CustomerPage() {
             </div>
             <button
               type="submit"
-              className="btn btn-primary w-100"
+              className="btn bg-light titleColor fw-bold h4 shadow-lg w-100"
               disabled={loginLoading}
             >
               {loginLoading ? "Logging in..." : "Login"}
@@ -172,7 +172,7 @@ export default function CustomerPage() {
 
       {/* CUSTOMER FORM */}
       <div className="card shadow">
-        <div className="card-header bg-primary text-white text-center">
+        <div className="card-header primaryColor text-center">
           <h4>Create Customer</h4>
         </div>
         <div className="card-body">
@@ -197,7 +197,7 @@ export default function CustomerPage() {
                 </label>
                 <input
                   type="text"
-                  className="form-control"
+                  className="form-control shadow-nonea"
                   id={key}
                   name={key}
                   value={value}
@@ -208,7 +208,7 @@ export default function CustomerPage() {
               </div>
             ))}
             <div className="col-12 text-center">
-              <button type="submit" className="btn btn-success px-4">
+              <button type="submit" className="btn primaryColor w-100 px-4">
                 Submit
               </button>
             </div>

@@ -1,4 +1,6 @@
+// src/app/customer_payment_dashboard/page.jsx
 'use client';
+import PaymentForm from '@/MainComponent/PaymentForm';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 
@@ -8,35 +10,66 @@ export default function CustomerPaymentDashboard() {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showTokenModal, setShowTokenModal] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [generatedToken, setGeneratedToken] = useState(null);
-  const [processingToken, setProcessingToken] = useState(false);
+  const [verifyingPayment, setVerifyingPayment] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Get email from localStorage (user is already logged in)
-        const storedEmail = localStorage.getItem('userEmail');
-        
-        if (!storedEmail) {
-          setError('User not authenticated. Please login again.');
+        // ✅ Check if we're in browser environment first
+        if (typeof window === 'undefined') {
           setLoading(false);
           return;
         }
 
-        setUser({ email: storedEmail });
+        // Get email from URL parameters or localStorage
+        const urlEmail = searchParams?.get('email');
+        const storedEmail = localStorage.getItem('userEmail');
+        const userEmail = urlEmail || storedEmail;
+
+        console.log('📧 User email for dashboard:', userEmail);
+
+        if (!userEmail) {
+          window.location.href = '/customer-signin';
+          return;
+        }
+
+        setUser({ email: userEmail, id: localStorage.getItem('userId') });
 
         // Fetch payments
-        await refreshPayments(storedEmail);
+        const response = await fetch(`/api/payments/history?email=${encodeURIComponent(userEmail)}`);
+        const data = await response.json();
+
+        if (response.ok) {
+          setPayments(data.payments || []);
           
-        // Check if redirected from payment with reference
-        const reference = searchParams?.get('reference') || searchParams?.get('trxref');
-        const paymentSuccess = searchParams?.get('payment_success');
-        
-        if (reference && paymentSuccess) {
-          console.log('🔄 Payment callback detected, verifying payment:', reference);
-          verifyPayment(reference, storedEmail);
+          // Check if we need to verify a payment (redirect from Paystack)
+          const reference = searchParams?.get('reference') || searchParams?.get('trxref');
+          const paymentSuccess = searchParams?.get('payment_success');
+          
+          if (reference && !paymentSuccess) {
+            console.log('🔄 Payment verification needed for reference:', reference);
+            verifyPayment(reference, userEmail);
+          } else if (paymentSuccess === 'true') {
+            // Show success message if redirected from successful payment
+            const token = localStorage.getItem('lastToken');
+            const meter = localStorage.getItem('lastMeter');
+            const units = localStorage.getItem('lastUnits');
+            
+            if (token && meter) {
+              setGeneratedToken({
+                token,
+                meterNumber: meter,
+                units: units || '0',
+                reference: searchParams?.get('ref') || '',
+                amount: localStorage.getItem('lastAmount') || '0'
+              });
+              setShowSuccessModal(true);
+            }
+          }
+        } else {
+          setError(data.message || 'Failed to load payments');
         }
 
       } catch (error) {
@@ -47,21 +80,8 @@ export default function CustomerPaymentDashboard() {
       }
     };
 
-    const refreshPayments = async (email) => {
-      try {
-        const response = await fetch(`/api/payments/history?email=${encodeURIComponent(email)}`);
-        if (response.ok) {
-          const data = await response.json();
-          setPayments(data.payments || []);
-        } else {
-          console.error('Failed to fetch payments');
-        }
-      } catch (error) {
-        console.error('Error fetching payments:', error);
-      }
-    };
-
     const verifyPayment = async (reference, userEmail) => {
+      setVerifyingPayment(true);
       try {
         console.log('🔍 Verifying payment with reference:', reference);
         
@@ -71,79 +91,128 @@ export default function CustomerPaymentDashboard() {
         console.log('📦 Verification API response:', data);
         
         if (data.status && data.data.status === 'success') {
-          console.log('💰 Payment successful');
+          console.log('💰 Payment successful, vending token...');
           
-          // Refresh payments to show updated status
-          await refreshPayments(userEmail);
+          // Get meter number and amount
+          const meterNumber = localStorage.getItem('meterNumber');
+          const amount = data.data.amount / 100;
+          
+          // Call vending API to generate token automatically
+          const vendResponse = await fetch('/api/vend-token', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              reference: reference,
+              amount: amount,
+              meterNumber: meterNumber,
+              email: userEmail
+            })
+          });
+          
+          const vendData = await vendResponse.json();
+          
+          if (vendResponse.ok && vendData.success) {
+            // Save token details
+            setGeneratedToken({
+              token: vendData.token,
+              meterNumber: vendData.meterNumber,
+              units: vendData.units,
+              amount: amount,
+              reference: reference,
+              customerName: userEmail
+            });
+            
+            // Store in localStorage for persistence
+            localStorage.setItem('lastToken', vendData.token);
+            localStorage.setItem('lastMeter', vendData.meterNumber);
+            localStorage.setItem('lastUnits', vendData.units);
+            localStorage.setItem('lastAmount', amount.toString());
+            
+            // Show success modal
+            setShowSuccessModal(true);
+            
+            // Update URL to remove payment parameters
+            const newUrl = new URL(window.location);
+            newUrl.searchParams.delete('reference');
+            newUrl.searchParams.delete('trxref');
+            newUrl.searchParams.set('payment_success', 'true');
+            window.history.replaceState({}, '', newUrl);
+            
+            // Refresh payments list
+            await refreshPayments(userEmail);
+          } else {
+            throw new Error(vendData.message || 'Failed to generate token');
+          }
+        } else {
+          setError(data.message || `Payment failed. Status: ${data.data?.status || 'unknown'}`);
         }
       } catch (error) {
         console.error('💥 Payment verification error:', error);
+        setError('Payment verification failed. Please try again.');
+      } finally {
+        setVerifyingPayment(false);
+      }
+    };
+
+    const refreshPayments = async (email) => {
+      try {
+        const response = await fetch(`/api/payments/history?email=${encodeURIComponent(email)}`);
+        if (response.ok) {
+          const data = await response.json();
+          setPayments(data.payments || []);
+        }
+      } catch (error) {
+        console.error('Error refreshing payments:', error);
       }
     };
 
     fetchData();
   }, [searchParams]);
 
-  const handleViewToken = async (payment) => {
-    if (payment.status !== 'success') {
-      setError('Token is only available for successful payments. Current status: ' + payment.status);
-      return;
-    }
-
-    setSelectedPayment(payment);
-    setProcessingToken(true);
+  const printReceipt = () => {
+    if (!generatedToken) return;
     
-    try {
-      // Generate token on demand
-      const tokenResponse = await fetch('/api/tokens/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          reference: payment.reference,
-          amount: payment.amount,
-          meterNumber: payment.metadata?.meter_number || payment.meter_number
-        })
-      });
-      
-      const tokenData = await tokenResponse.json();
-      
-      if (tokenResponse.ok && tokenData.success) {
-        setGeneratedToken({
-          token: tokenData.token,
-          meterNumber: tokenData.meterNumber,
-          units: tokenData.units,
-          reference: payment.reference
-        });
-        setShowTokenModal(true);
-        
-        // Refresh payments to update with token
-        await refreshPayments(user.email);
-      } else {
-        setError('Failed to generate token: ' + (tokenData.message || 'Unknown error'));
-      }
-    } catch (error) {
-      setError('Error generating token: ' + error.message);
-    } finally {
-      setProcessingToken(false);
-    }
-  };
-
-  const handlePrintToken = () => {
     const printContent = `
       <div style="text-align: center; padding: 20px; font-family: Arial, sans-serif;">
-        <h2>Electricity Token Receipt</h2>
-        <div style="border: 2px solid #000; padding: 15px; margin: 20px 0;">
-          <h3>TOKEN: <span style="font-size: 24px; letter-spacing: 2px;">${generatedToken.token}</span></h3>
+        <h2 style="color: #2c5aa0; margin-bottom: 5px;">Noretek Energy</h2>
+        <h3 style="margin-top: 0; color: #333;">ELECTRICITY TOKEN RECEIPT</h3>
+        <hr style="border-color: #ccc;">
+        
+        <div style="text-align: left; margin: 15px 0;">
+          <p><strong>Customer:</strong> ${generatedToken.customerName || user?.email}</p>
+          <p><strong>Meter Number:</strong> ${generatedToken.meterNumber}</p>
+          <p><strong>Reference:</strong> ${generatedToken.reference}</p>
         </div>
-        <p><strong>Meter Number:</strong> ${generatedToken.meterNumber}</p>
-        <p><strong>Units:</strong> ${generatedToken.units} kWh</p>
-        <p><strong>Amount:</strong> ₦${selectedPayment.amount}</p>
-        <p><strong>Reference:</strong> ${generatedToken.reference}</p>
-        <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
-        <hr>
-        <p>Thank you for your purchase!</p>
+        
+        <div style="background: #000; color: #fff; padding: 15px; border-radius: 8px; margin: 20px 0;">
+          <h4 style="margin: 0 0 10px 0; color: #fff;">YOUR TOKEN</h4>
+          <div style="font-family: 'Courier New', monospace; font-size: 24px; font-weight: bold; letter-spacing: 3px;">
+            ${generatedToken.token}
+          </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; margin: 15px 0;">
+          <div style="text-align: left;">
+            <p><strong>Amount Paid:</strong><br>₦${generatedToken.amount}</p>
+          </div>
+          <div style="text-align: right;">
+            <p><strong>Units:</strong><br>${generatedToken.units} kWh</p>
+          </div>
+        </div>
+        
+        <div style="margin: 20px 0; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+          <p style="margin: 0; font-size: 14px; color: #666;">
+            <strong>Date:</strong> ${new Date().toLocaleDateString()} | 
+            <strong>Time:</strong> ${new Date().toLocaleTimeString()}
+          </p>
+        </div>
+        
+        <hr style="border-color: #ccc;">
+        <p style="color: #666; font-size: 12px;">
+          Thank you for your purchase! For assistance, contact support@noretekenergy.com
+        </p>
       </div>
     `;
     
@@ -151,10 +220,10 @@ export default function CustomerPaymentDashboard() {
     printWindow.document.write(`
       <html>
         <head>
-          <title>Print Token - ${generatedToken.reference}</title>
+          <title>Token Receipt - ${generatedToken.reference}</title>
           <style>
             @media print {
-              body { margin: 0; padding: 20px; }
+              body { margin: 0; padding: 15px; }
               .no-print { display: none; }
             }
           </style>
@@ -162,8 +231,12 @@ export default function CustomerPaymentDashboard() {
         <body>
           ${printContent}
           <div class="no-print" style="text-align: center; margin-top: 20px;">
-            <button onclick="window.print()">Print</button>
-            <button onclick="window.close()">Close</button>
+            <button onclick="window.print()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">
+              Print Receipt
+            </button>
+            <button onclick="window.close()" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer;">
+              Close Window
+            </button>
           </div>
         </body>
       </html>
@@ -171,87 +244,111 @@ export default function CustomerPaymentDashboard() {
     printWindow.document.close();
   };
 
-  const handleMakePayment = async (formData) => {
-    try {
-      const { amount, meterNumber } = formData;
-      
-      const response = await fetch('/api/payments/initialize', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: user.email,
-          amount: parseInt(amount),
-          meterNumber: meterNumber,
-          metadata: {
-            meter_number: meterNumber
-          }
-        })
-      });
-
-      const data = await response.json();
-
-      if (data.status) {
-        // Redirect to Paystack payment page
-        window.location.href = data.data.authorization_url;
-      } else {
-        throw new Error(data.message || 'Failed to initialize payment');
-      }
-    } catch (error) {
-      setError(error.message);
-    }
-  };
-
-  if (loading) {
+  if (loading || verifyingPayment) {
     return (
       <div className="container py-5 text-center">
         <div className="spinner-border text-primary" role="status">
           <span className="visually-hidden">Loading...</span>
         </div>
-        <p className="mt-3">Loading payment dashboard...</p>
+        <p className="mt-3">
+          {verifyingPayment ? 'Processing your payment and generating token...' : 'Loading your dashboard...'}
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="container py-4">
-      {/* Token Modal */}
-      {showTokenModal && generatedToken && (
+    <div className="container py-5">
+      {/* Success Modal with Receipt */}
+      {showSuccessModal && generatedToken && (
         <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-dialog modal-dialog-centered modal-lg">
             <div className="modal-content">
               <div className="modal-header bg-success text-white">
-                <h5 className="modal-title">Electricity Token</h5>
-                <button type="button" className="btn-close" onClick={() => setShowTokenModal(false)}></button>
+                <h5 className="modal-title">
+                  <i className="fas fa-check-circle me-2"></i>
+                  Payment Successful!
+                </h5>
+                <button 
+                  type="button" 
+                  className="btn-close btn-close-white"
+                  onClick={() => setShowSuccessModal(false)}
+                ></button>
               </div>
-              <div className="modal-body text-center">
-                <div className="bg-dark text-light p-3 rounded mb-3">
-                  <h2 className="display-5 font-monospace">{generatedToken.token}</h2>
-                </div>
-                <div className="row">
-                  <div className="col-md-6">
-                    <p><strong>Meter Number:</strong><br/>{generatedToken.meterNumber}</p>
+              <div className="modal-body">
+                {/* Receipt Content */}
+                <div className="receipt p-4 border rounded">
+                  <div className="text-center mb-4">
+                    <h3 className="text-primary fw-bold">Noretek Energy</h3>
+                    <h5 className="text-dark">ELECTRICITY TOKEN RECEIPT</h5>
                   </div>
-                  <div className="col-md-6">
-                    <p><strong>Units:</strong><br/>{generatedToken.units} kWh</p>
+                  
+                  <div className="row mb-3">
+                    <div className="col-md-6">
+                      <p><strong>Customer:</strong> {generatedToken.customerName || user?.email}</p>
+                    </div>
+                    <div className="col-md-6">
+                      <p><strong>Meter Number:</strong> {generatedToken.meterNumber}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-dark text-light p-4 rounded text-center mb-4">
+                    <h6 className="mb-2 text-warning">YOUR ELECTRICITY TOKEN</h6>
+                    <h2 className="display-5 font-monospace text-white mb-0">
+                      {generatedToken.token}
+                    </h2>
+                  </div>
+                  
+                  <div className="row mb-3">
+                    <div className="col-md-6">
+                      <p><strong>Amount Paid:</strong> ₦{generatedToken.amount}</p>
+                    </div>
+                    <div className="col-md-6">
+                      <p><strong>Units Purchased:</strong> {generatedToken.units} kWh</p>
+                    </div>
+                  </div>
+                  
+                  <div className="row">
+                    <div className="col-md-6">
+                      <p><strong>Reference:</strong> {generatedToken.reference}</p>
+                    </div>
+                    <div className="col-md-6">
+                      <p><strong>Date:</strong> {new Date().toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="alert alert-info mt-4">
+                    <h6 className="mb-2">How to use your token:</h6>
+                    <ol className="mb-0 small">
+                      <li>Press the 'Enter' button on your meter</li>
+                      <li>Enter the 20-digit token when prompted</li>
+                      <li>Press 'Enter' again to confirm</li>
+                      <li>Wait for the meter to validate and load the units</li>
+                    </ol>
                   </div>
                 </div>
-                <p><strong>Reference:</strong><br/>{generatedToken.reference}</p>
-                <p><strong>Amount Paid:</strong><br/>₦{selectedPayment.amount}</p>
               </div>
               <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={() => {
-                  navigator.clipboard.writeText(generatedToken.token);
-                  alert('Token copied to clipboard!');
-                }}>
-                  <i className="bi bi-clipboard me-1"></i> Copy Token
+                <button 
+                  className="btn btn-outline-primary"
+                  onClick={() => {
+                    navigator.clipboard.writeText(generatedToken.token);
+                    alert('Token copied to clipboard!');
+                  }}
+                >
+                  <i className="fas fa-copy me-2"></i>Copy Token
                 </button>
-                <button className="btn btn-primary" onClick={handlePrintToken}>
-                  <i className="bi bi-printer me-1"></i> Print Token
+                <button 
+                  className="btn btn-primary"
+                  onClick={printReceipt}
+                >
+                  <i className="fas fa-print me-2"></i>Print Receipt
                 </button>
-                <button className="btn btn-success" onClick={() => setShowTokenModal(false)}>
-                  Close
+                <button 
+                  className="btn btn-success"
+                  onClick={() => setShowSuccessModal(false)}
+                >
+                  Continue Shopping
                 </button>
               </div>
             </div>
@@ -259,110 +356,62 @@ export default function CustomerPaymentDashboard() {
         </div>
       )}
 
-      {/* Error Alert */}
-      {error && (
-        <div className="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-          {error}
-          <button type="button" className="btn-close" onClick={() => setError('')}></button>
-        </div>
-      )}
-
-      {/* Processing Overlay */}
-      {processingToken && (
-        <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
-          <div className="spinner-border text-primary" style={{ width: '3rem', height: '3rem' }}>
-            <span className="visually-hidden">Generating token...</span>
-          </div>
-          <span className="ms-2 text-white">Generating token...</span>
-        </div>
-      )}
-
-      <div className="row mb-4">
+      <div className="row">
         <div className="col">
-          <h2 className="h4">Electricity Token Purchase</h2>
-          <p className="text-muted">Welcome, {user?.email}</p>
+          <h2 className="h4 text-primary">Electricity Token Purchase</h2>
+          <p className="text-muted h5">Welcome back, {user?.email}</p>
         </div>
       </div>
 
-      <div className="row">
-        <div className="col-md-6 mb-4">
-          <div className="card shadow-sm">
-            <div className="card-header bg-primary text-white">
-              <h5 className="mb-0">Make Payment</h5>
-            </div>
-            <div className="card-body">
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                const formData = new FormData(e.target);
-                handleMakePayment({
-                  amount: formData.get('amount'),
-                  meterNumber: formData.get('meterNumber')
-                });
-              }}>
-                <div className="mb-3">
-                  <label htmlFor="meterNumber" className="form-label">Meter Number *</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="meterNumber"
-                    required
-                    placeholder="Enter your meter number"
-                  />
-                </div>
-                <div className="mb-3">
-                  <label htmlFor="amount" className="form-label">Amount (₦) *</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    name="amount"
-                    min="100"
-                    step="100"
-                    required
-                    placeholder="Enter amount in Naira"
-                  />
-                  <div className="form-text">Minimum amount: ₦100</div>
-                </div>
-                <button
-                  type="submit"
-                  className="btn btn-primary w-100"
-                >
-                  Proceed to Payment
-                </button>
-              </form>
-            </div>
-          </div>
+      {error && (
+        <div className="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+          <i className="fas fa-exclamation-triangle me-2"></i>
+          {error}
+          <button 
+            type="button" 
+            className="btn-close" 
+            onClick={() => setError('')}
+          ></button>
+        </div>
+      )}
+
+      <div className="row mb-5">
+        <div className="col-md-6">
+          <PaymentForm
+            userEmail={user?.email} 
+            userId={user?.id} 
+          />
         </div>
         
         <div className="col-md-6">
           <div className="card shadow-sm">
             <div className="card-header bg-primary text-white">
               <h5 className="mb-0">
-                <i className="bi bi-clock-history me-2"></i>
+                <i className="fas fa-history me-2"></i>
                 Payment History
               </h5>
             </div>
             <div className="card-body">
               {payments.length === 0 ? (
                 <div className="alert alert-info">
-                  <i className="bi bi-info-circle me-2"></i>
+                  <i className="fas fa-info-circle me-2"></i>
                   No payments yet. Make your first payment!
                 </div>
               ) : (
                 <div className="table-responsive">
-                  <table className="table table-striped table-sm">
+                  <table className="table table-striped table-hover">
                     <thead className="table-primary">
                       <tr>
                         <th>Date</th>
                         <th>Amount</th>
                         <th>Status</th>
                         <th>Reference</th>
-                        <th>Action</th>
                       </tr>
                     </thead>
                     <tbody>
                       {payments.map((payment) => (
-                        <tr key={payment._id || payment.id}>
-                          <td>{new Date(payment.createdAt || payment.created_at).toLocaleDateString()}</td>
+                        <tr key={payment.id}>
+                          <td>{new Date(payment.created_at).toLocaleDateString()}</td>
                           <td>₦{payment.amount}</td>
                           <td>
                             <span className={`badge ${
@@ -372,24 +421,7 @@ export default function CustomerPaymentDashboard() {
                               {payment.status}
                             </span>
                           </td>
-                          <td className="small">{payment.reference}</td>
-                          <td>
-                            <button 
-                              className={`btn btn-sm ${payment.status === 'success' ? 'btn-outline-primary' : 'btn-outline-secondary'}`}
-                              onClick={() => handleViewToken(payment)}
-                              disabled={payment.status !== 'success' || processingToken}
-                              title={payment.status !== 'success' ? 'Token available only for successful payments' : 'View Token'}
-                            >
-                              {processingToken && selectedPayment?.reference === payment.reference ? (
-                                <>
-                                  <span className="spinner-border spinner-border-sm me-1" role="status"></span>
-                                  Generating...
-                                </>
-                              ) : (
-                                'View Token'
-                              )}
-                            </button>
-                          </td>
+                          <td className="small text-muted">{payment.reference}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -400,6 +432,9 @@ export default function CustomerPaymentDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Add Font Awesome for icons */}
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     </div>
   );
 }

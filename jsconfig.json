@@ -1,7 +1,12 @@
+// jsconfig.json (or tsconfig.json for TypeScript)
 {
   "compilerOptions": {
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@/models/*": ["./src/models/*"],
+      "@/lib/*": ["./src/lib/*"]
     }
-  }
+  },
+  "include": ["src/**/*"]
 }

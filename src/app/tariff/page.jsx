@@ -308,8 +308,8 @@ useEffect(() => {
 
       {/* LOGIN FORM */}
       {!token && (
-        <div className="card mb-5 shadow">
-          <div className="card-header bg-dark text-white text-center">
+        <div className="card mb-5 shadow-sm">
+          <div className="card-header primaryColor text-center">
             <h4>Login to Get Token</h4>
           </div>
           <div className="card-body">
@@ -318,7 +318,7 @@ useEffect(() => {
                 <label className="form-label">User ID</label>
                 <input
                   type="text"
-                  className="form-control"
+                  className="form-control shadow-none"
                   name="userId"
                   value={loginData.userId}
                   onChange={handleLoginChange}
@@ -329,7 +329,7 @@ useEffect(() => {
                 <label className="form-label">Password</label>
                 <input
                   type="password"
-                  className="form-control"
+                  className="form-control shadow-none"
                   name="password"
                   value={loginData.password}
                   onChange={handleLoginChange}
@@ -340,7 +340,7 @@ useEffect(() => {
                 <label className="form-label">Company</label>
                 <input
                   type="text"
-                  className="form-control"
+                  className="form-control shadow-none"
                   name="company"
                   value={loginData.company}
                   onChange={handleLoginChange}
@@ -349,7 +349,7 @@ useEffect(() => {
               </div>
               <button
                 type="submit"
-                className="btn btn-primary w-100"
+                className="btn primaryColor w-100"
                 disabled={loginLoading}
               >
                 {loginLoading ? "Logging in..." : "Login"}
@@ -364,27 +364,27 @@ useEffect(() => {
 
       {/* TARIFF FORM */}
       {token && (
-        <div className="card mb-5 shadow">
-          <div className="card-header bg-primary text-white text-center">
+        <div className="card mb-5 shadow-sm">
+          <div className="card-header primaryColor  text-center">
             <h4>{isEditing ? "Edit Tariff" : "Create New Tariff"}</h4>
           </div>
           <div className="card-body">
             <form onSubmit={handleSubmit} className="row g-3">
               {[
-                ["tariffId", "Tariff ID", "text", true],
-                ["tariffName", "Tariff Name", "text", true],
-                ["price", "Price", "number", true],
-                ["tax", "Tax", "number", true],
-                ["repaymentRatio", "Repayment Ratio", "number", true],
-                ["monthlyCost", "Monthly Cost", "number", true],
-                ["company", "Company", "text", false],
-                ["remark", "Remark", "text", false],
+                ["tariffId", "Tariff ID:", "text", true],
+                ["tariffName", "Tariff Name:", "text", true],
+                ["price", "Price:", "number", true],
+                ["tax", "Tax:", "number", true],
+                ["repaymentRatio", "Repayment Ratio:", "number", true],
+                ["monthlyCost", "Monthly Cost:", "number", true],
+                ["company", "Company:", "text", false],
+                ["remark", "Remark:", "text", false],
               ].map(([key, label, type, required]) => (
                 <div className="col-md-6" key={key}>
                   <label className="form-label">{label}</label>
                   <input
                     type={type}
-                    className="form-control"
+                    className="form-control shadow-none"
                     name={key}
                     value={formData[key] ?? ""}
                     onChange={handleChange}
@@ -397,7 +397,7 @@ useEffect(() => {
               <div className="col-12">
                 <button 
                   type="submit" 
-                  className="btn btn-success w-100"
+                  className="btn primaryColor w-100"
                   disabled={loading}
                 >
                   {loading ? "Processing..." : (isEditing ? "Update Tariff" : "Create Tariff")}
@@ -426,7 +426,7 @@ useEffect(() => {
       {/* TARIFF TABLE */}
       {token && (
         <div className="card shadow">
-          <div className="card-header bg-secondary text-white">
+          <div className="card-header primaryColor text-white">
             <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
               <h5 className="mb-0">Tariff Management</h5>
               <div className="d-flex flex-wrap gap-2">
@@ -439,13 +439,13 @@ useEffect(() => {
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
-                    <button className="btn btn-primary" type="submit">
+                    <button className="btn titleColor bg-light border-opacity-50 border" type="submit">
                       Search
                     </button>
                   </div>
                 </form>
                 <select
-                  className="form-select"
+                  className="form-select shadow-none"
                   value={`${sortField}:${sortOrder}`}
                   onChange={(e) => {
                     const [field, order] = e.target.value.split(':');
@@ -475,27 +475,27 @@ useEffect(() => {
                 <table className="table table-bordered table-hover">
                   <thead>
                     <tr>
-                      <th onClick={() => handleSort("tariffId")} className="cursor-pointer">
+                      <th onClick={() => handleSort("tariffId")} className="cursor-pointer titleColor">
                         Tariff ID {sortField === "tariffId" && (
                           <span>{sortOrder === "asc" ? "↑" : "↓"}</span>
                         )}
                       </th>
-                      <th onClick={() => handleSort("tariffName")} className="cursor-pointer">
+                      <th onClick={() => handleSort("tariffName")} className="cursor-pointer titleColor">
                         Name {sortField === "tariffName" && (
                           <span>{sortOrder === "asc" ? "↑" : "↓"}</span>
                         )}
                       </th>
-                      <th onClick={() => handleSort("price")} className="cursor-pointer">
+                      <th onClick={() => handleSort("price")} className="cursor-pointer titleColor">
                         Price {sortField === "price" && (
                           <span>{sortOrder === "asc" ? "↑" : "↓"}</span>
                         )}
                       </th>
-                      <th>Tax</th>
-                      <th>Repayment Ratio</th>
-                      <th>Monthly Cost</th>
-                      <th>Company</th>
-                      <th>Remark</th>
-                      <th>Actions</th>
+                      <th className="titleColor">Tax</th>
+                      <th className="titleColor">Repayment Ratio</th>
+                      <th className="titleColor">Monthly Cost</th>
+                      <th className="titleColor">Company</th>
+                      <th className="titleColor">Remark</th>
+                      <th className="titleColor">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -523,7 +523,7 @@ useEffect(() => {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="9" className="text-center py-4">
+                        <td colSpan="9" className="text-center text-muted display-5 py-4">
                           No tariffs found
                         </td>
                       </tr>
@@ -540,7 +540,7 @@ useEffect(() => {
                   </div>
                   <div className="btn-group">
                     <button
-                      className="btn btn-outline-secondary"
+                      className="btn primaryColor"
                       onClick={() => handlePageChange(pagination.pageNumber - 1)}
                       disabled={pagination.pageNumber === 1 || loading}
                     >
@@ -550,7 +550,7 @@ useEffect(() => {
                       Page {pagination.pageNumber} of {pagination.totalPages}
                     </span>
                     <button
-                      className="btn btn-outline-secondary"
+                      className="btn primaryColor"
                       onClick={() => handlePageChange(pagination.pageNumber + 1)}
                       disabled={pagination.pageNumber === pagination.totalPages || loading}
                     >

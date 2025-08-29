@@ -5,7 +5,7 @@
   --testColor: #0b0c27;
 
   --hoverColor: #75757a;
-  --softColor: #f2f2f2;
+  --softColor: #fffcfc;
   --WhiteColor: #ffff;
   --praColor: #023e8a;
   --ppColor: #023e8a;
@@ -16,7 +16,7 @@
 }
 
 body {
-  background: var(--softColor);
+  background: var(--gradientBg);
 }
 
 /*--------------------------------------------------------------
@@ -430,8 +430,8 @@ thead.backgro th {
   background-color: var(--gradientBg);
 }
 .primaryColor {
-  background-color: var(--praColor);
-  color: var(--WhiteColor);
+  background-color: var(--praColor) !important;
+  color: var(--WhiteColor) !important;
 }
 .primaryColor:hover {
   background-color: var(--praColor);

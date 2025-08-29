@@ -7,7 +7,6 @@ export default function Login() {
   const router = useRouter();
   const [form, setForm] = useState({ email: "", password: "" });
   const [message, setMessage] = useState("");
-
   const [submitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
@@ -16,7 +15,6 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     setIsSubmitting(true);
 
     try {
@@ -24,11 +22,18 @@ export default function Login() {
       setMessage(res.data.message);
 
       if (res.data.role === "Customer") {
+        // ✅ Store user email in localStorage for authentication
+        if (typeof window !== "undefined") {
+          localStorage.setItem("userEmail", form.email);
+        }
+        
         setMessage("Signin successful! Redirecting...");
-        setTimeout(() => router.push("/customer_dashboard"), 2000);
+        setTimeout(() => router.push("/customer_payment_dashboard"), 2000);
       }
     } catch (err) {
       setMessage(err.response?.data?.message || "Login failed");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -38,11 +43,16 @@ export default function Login() {
         className="shadow-lg p-4 p-md-5 rounded w-100"
         style={{ maxWidth: 600 }}
       >
-        <h4 className="mb-4 text-center titleColor text-uppercase  font-monospace">
+        <h4 className="mb-4 text-center titleColor text-uppercase">
           Sign In
         </h4>
 
-        {message && <div className="alert alert-info">{message}</div>}
+        {message && (
+          <div className={`alert ${message.includes("successful") ? "alert-success" : "alert-info"}`}>
+            {message}
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
             <label className="fw-bold">Email:</label>
@@ -53,10 +63,11 @@ export default function Login() {
               value={form.email}
               onChange={handleChange}
               required
+              disabled={submitting}
             />
           </div>
           <div className="mb-3">
-            <label className="fw-bold ">Password:</label>
+            <label className="fw-bold">Password:</label>
             <input
               type="password"
               className="form-control shadow-none p-2"
@@ -64,10 +75,22 @@ export default function Login() {
               value={form.password}
               onChange={handleChange}
               required
+              disabled={submitting}
             />
           </div>
-          <button type="submit" className="btn primaryColor font-monospace rounded w-100">
-            {submitting ? "Signing in..." : "Sign In"}
+          <button 
+            type="submit" 
+            className="btn primaryColor  rounded w-100"
+            disabled={submitting}
+          >
+            {submitting ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                Signing in...
+              </>
+            ) : (
+              "Sign In"
+            )}
           </button>
         </form>
       </div>

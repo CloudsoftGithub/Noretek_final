@@ -393,8 +393,8 @@ export default function MeterPage() {
 
       {/* METER FORM */}
       {token && (
-        <div className="card mb-5 shadow">
-          <div className="card-header bg-primary text-white text-center">
+        <div className="card mb-5 shadow-sm">
+          <div className="card-header primaryColor  fw-bold text-center">
             <h4>Create New Meter</h4>
           </div>
           <div className="card-body">
@@ -410,7 +410,7 @@ export default function MeterPage() {
                 <label className="form-label">Meter ID *</label>
                 <input
                   type="text"
-                  className="form-control"
+                  className="form-control shadow-none"
                   name="meterId"
                   value={formData.meterId}
                   onChange={handleChange}
@@ -420,9 +420,9 @@ export default function MeterPage() {
               </div>
 
               <div className="col-md-6">
-                <label className="form-label">Type *</label>
+                <label className="form-label shadow-none">Type *</label>
                 <select
-                  className="form-control"
+                  className="form-control shadow-none"
                   name="type"
                   value={formData.type}
                   onChange={handleChange}
@@ -437,9 +437,9 @@ export default function MeterPage() {
               </div>
 
               <div className="col-md-6">
-                <label className="form-label">Communication Way *</label>
+                <label className="form-label ">Communication Way *</label>
                 <select
-                  className="form-control"
+                  className="form-control shadow-none"
                   name="communicationWay"
                   value={formData.communicationWay}
                   onChange={handleChange}
@@ -456,7 +456,7 @@ export default function MeterPage() {
               <div className="col-md-6">
                 <label className="form-label">Protocol Type *</label>
                 <select
-                  className="form-control"
+                  className="form-control shadow-none"
                   name="protocolType"
                   value={formData.protocolType}
                   onChange={handleChange}
@@ -474,7 +474,7 @@ export default function MeterPage() {
                 <label className="form-label">Protocol Version</label>
                 <input
                   type="text"
-                  className="form-control"
+                  className="form-control shadow-none"
                   name="protocolVersion"
                   value={formData.protocolVersion}
                   onChange={handleChange}
@@ -486,7 +486,7 @@ export default function MeterPage() {
                 <label className="form-label">Company</label>
                 <input
                   type="text"
-                  className="form-control"
+                  className="form-control shadow-none"
                   name="company"
                   value={formData.company}
                   readOnly
@@ -497,7 +497,7 @@ export default function MeterPage() {
                 <label className="form-label">Latitude</label>
                 <input
                   type="number"
-                  className="form-control"
+                  className="form-control shadow-none"
                   name="lat"
                   value={formData.lat}
                   onChange={handleChange}
@@ -510,7 +510,7 @@ export default function MeterPage() {
                 <label className="form-label">Longitude</label>
                 <input
                   type="number"
-                  className="form-control"
+                  className="form-control shadow-none"
                   name="lng"
                   value={formData.lng}
                   onChange={handleChange}
@@ -522,7 +522,7 @@ export default function MeterPage() {
               <div className="col-12">
                 <label className="form-label">Remark</label>
                 <textarea
-                  className="form-control"
+                  className="form-control shadow-none"
                   name="remark"
                   value={formData.remark}
                   onChange={handleChange}
@@ -532,7 +532,7 @@ export default function MeterPage() {
               </div>
 
               <div className="col-12">
-                <button type="submit" className="btn btn-success w-100" disabled={loading}>
+                <button type="submit" className="btn primaryColor fw-bold w-100" disabled={loading}>
                   {loading ? "Creating..." : "Create Meter"}
                 </button>
               </div>
@@ -543,8 +543,8 @@ export default function MeterPage() {
 
       {/* METER TABLE */}
       {token && (
-        <div className="card shadow">
-          <div className="card-header bg-secondary text-white">
+        <div className="card shadow mb-5">
+          <div className="card-header primaryColor text-white">
             <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
               <h5 className="mb-0">Meter Management</h5>
               <div className="d-flex flex-wrap gap-2">
@@ -552,18 +552,18 @@ export default function MeterPage() {
                   <div className="input-group">
                     <input
                       type="text"
-                      className="form-control"
+                      className="form-control shadow-none"
                       placeholder="Search meters..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
-                    <button className="btn btn-primary" type="submit" disabled={loading}>
+                    <button className="btn titleColor bg-light border-opacity-50 border" type="submit" disabled={loading}>
                       Search
                     </button>
                   </div>
                 </form>
                 <select
-                  className="form-select"
+                  className="form-select "
                   value={`${sortField}:${sortOrder}`}
                   onChange={(e) => {
                     const [field, order] = e.target.value.split(':');
@@ -594,23 +594,23 @@ export default function MeterPage() {
                 <table className="table table-bordered table-hover">
                   <thead>
                     <tr>
-                      <th onClick={() => handleSort("meterId")} className="cursor-pointer">
+                      <th onClick={() => handleSort("meterId")} className="cursor-pointer titleColor">
                         Meter ID {sortField === "meterId" && (
                           <span>{sortOrder === "asc" ? "↑" : "↓"}</span>
                         )}
                       </th>
-                      <th onClick={() => handleSort("type")} className="cursor-pointer">
+                      <th onClick={() => handleSort("type")} className="cursor-pointer titleColor">
                         Type {sortField === "type" && (
                           <span>{sortOrder === "asc" ? "↑" : "↓"}</span>
                         )}
                       </th>
-                      <th>Communication Way</th>
-                      <th>Protocol Type</th>
-                      <th>Protocol Version</th>
-                      <th>Latitude</th>
-                      <th>Longitude</th>
-                      <th>Company</th>
-                      <th>Remark</th>
+                      <th className="titleColor">Communication Way</th>
+                      <th className="titleColor">Protocol Type</th>
+                      <th className="titleColor">Protocol Version</th>
+                      <th className="titleColor">Latitude</th>
+                      <th className="titleColor">Longitude</th>
+                      <th className="titleColor">Company</th>
+                      <th className="titleColor">Remark</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -630,7 +630,7 @@ export default function MeterPage() {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="9" className="text-center py-4">
+                        <td colSpan="9" className="text-center text-muted display-5 py-4">
                           No meters found
                         </td>
                       </tr>
@@ -647,7 +647,7 @@ export default function MeterPage() {
                   </div>
                   <div className="btn-group">
                     <button
-                      className="btn btn-outline-secondary"
+                      className="btn primaryColor"
                       onClick={() => handlePageChange(pagination.pageNumber - 1)}
                       disabled={pagination.pageNumber === 1 || loading}
                     >
@@ -657,7 +657,7 @@ export default function MeterPage() {
                       Page {pagination.pageNumber} of {pagination.totalPages}
                     </span>
                     <button
-                      className="btn btn-outline-secondary"
+                      className="btn primaryColor"
                       onClick={() => handlePageChange(pagination.pageNumber + 1)}
                       disabled={pagination.pageNumber === pagination.totalPages || loading}
                     >
