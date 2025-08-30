@@ -5,7 +5,7 @@ export default function UserList() {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
-    fetch("/api/signup")
+    fetch("/app/api/customer-signup-api")
       .then((res) => res.json())
       .then((data) => setUsers(data));
   }, []);

@@ -50,7 +50,8 @@ export default function UserDashboard() {
           setUserData(prev => ({
             ...prev,
             email: storedEmail,
-            meterId: "MTR-" + Math.floor(100000 + Math.random() * 900000)
+            // Meter ID should come from the database, not auto-generated
+            meterId: localStorage.getItem("meterNumber") || "MTR-000000"
           }));
         }
         
@@ -87,27 +88,27 @@ export default function UserDashboard() {
     }
   };
 
-const handleLogout = () => {
-  // Clear all user-related data from localStorage
-  localStorage.removeItem("userEmail");
-  localStorage.removeItem("userToken");
-  localStorage.removeItem("userData");
-  localStorage.removeItem("authToken");
-  localStorage.removeItem("userId");
-  localStorage.removeItem("meterNumber");
-  localStorage.removeItem("lastToken");
-  localStorage.removeItem("lastMeter");
-  localStorage.removeItem("lastUnits");
-  localStorage.removeItem("lastAmount");
-  localStorage.removeItem("purchasedTokens");
-  
-  // Clear any session data
-  sessionStorage.clear();
-  
-  // Redirect to login page
-  router.push("/customer-signin");
-  router.refresh(); // Force refresh to clear any cached state
-};
+  const handleLogout = () => {
+    // Clear all user-related data from localStorage
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("userToken");
+    localStorage.removeItem("userData");
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("meterNumber");
+    localStorage.removeItem("lastToken");
+    localStorage.removeItem("lastMeter");
+    localStorage.removeItem("lastUnits");
+    localStorage.removeItem("lastAmount");
+    localStorage.removeItem("purchasedTokens");
+    
+    // Clear any session data
+    sessionStorage.clear();
+    
+    // Redirect to login page
+    router.push("/customer-signin");
+    router.refresh(); // Force refresh to clear any cached state
+  };
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
@@ -123,6 +124,7 @@ const handleLogout = () => {
       
       // Save to localStorage (simulating API save)
       localStorage.setItem("userData", JSON.stringify(updatedUserData));
+      localStorage.setItem("meterNumber", updatedUserData.meterId);
       setUserData(updatedUserData);
       
       setSaveStatus("saved");
@@ -196,7 +198,7 @@ const handleLogout = () => {
   };
 
   const navigateToPaymentDashboard = () => {
-    router.push("/customer_dashboard");
+    router.push("/customer_payment_dashboard");
   };
 
   return (
@@ -431,10 +433,10 @@ const handleLogout = () => {
                             className="form-control shadow-none"
                             id="meterId"
                             value={userData.meterId}
-                            disabled
-                            style={{backgroundColor: '#f2f2f2', fontWeight: 'bold'}}
+                            onChange={(e) => setUserData({...userData, meterId: e.target.value})}
+                            placeholder="Enter your meter ID"
                           />
-                          <div className="form-text">Your unique meter identifier. Contact support to change.</div>
+                          <div className="form-text">Your unique meter identifier.</div>
                         </div>
                         <div className="mb-3">
                           <label htmlFor="phone" className="form-label">Phone Number</label>

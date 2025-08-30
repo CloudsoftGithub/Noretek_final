@@ -156,16 +156,19 @@ export default function PropertyUnitForm() {
                 {/* Meter ID */}
                 <div className="col-md-6 mb-3">
                   <label className="form-label">Meter ID </label>
-                 <input type="text"
-                   className="form-control shadow-none "
+                  <select
+                    className="form-select shadow-none "
                     name="meter_id"
                     value={form.meter_id}
                     onChange={handleChange}
-                  />
-                  
-                                     
-                   
-                
+                  >
+                    <option value="" >Select Meter</option>
+                    {meterOptions.map((m) => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* Captured By */}
