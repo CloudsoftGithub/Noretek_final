@@ -1,14 +1,61 @@
 // MainComponent/PaymentForm.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function PaymentForm({ userEmail, userId }) {
   const [amount, setAmount] = useState('');
   const [meterNumber, setMeterNumber] = useState('');
   const [loading, setLoading] = useState(false);
+  const [userData, setUserData] = useState(null);
+  const [fetchingMeter, setFetchingMeter] = useState(true);
+
+  // Fetch user data including meter number
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        setFetchingMeter(true);
+        
+        // Try to get from localStorage first
+        const storedUserData = localStorage.getItem('userData');
+        if (storedUserData) {
+          const parsedData = JSON.parse(storedUserData);
+          setUserData(parsedData);
+          if (parsedData.meterId) {
+            setMeterNumber(parsedData.meterId);
+          }
+        }
+        
+        // Also try to fetch from API if available
+        try {
+          const response = await fetch('/api/user/profile');
+          if (response.ok) {
+            const apiUserData = await response.json();
+            setUserData(apiUserData);
+            if (apiUserData.meterId || apiUserData.meterNumber) {
+              setMeterNumber(apiUserData.meterId || apiUserData.meterNumber);
+            }
+          }
+        } catch (apiError) {
+          console.log('API fetch not available, using localStorage data');
+        }
+        
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      } finally {
+        setFetchingMeter(false);
+      }
+    };
+
+    fetchUserData();
+  }, [userEmail]);
 
   const initializePayment = async (email, amount, meterNumber, userId = null) => {
     try {
       console.log('🔄 Initializing payment for:', email);
+      
+      // Validate meter number
+      if (!meterNumber || meterNumber.trim() === '') {
+        throw new Error('Meter number is required');
+      }
       
       // Save user data to localStorage for retrieval after payment
       if (typeof window !== 'undefined') {
@@ -28,7 +75,7 @@ export default function PaymentForm({ userEmail, userId }) {
           email,
           amount,
           metadata: {
-            meterNumber,
+            meterNumber: meterNumber.trim(),
             user_id: userId
           }
         })
@@ -60,6 +107,11 @@ export default function PaymentForm({ userEmail, userId }) {
       return;
     }
     
+    if (!meterNumber || meterNumber.trim() === '') {
+      alert('Please enter your meter number');
+      return;
+    }
+    
     setLoading(true);
     
     try {
@@ -69,6 +121,14 @@ export default function PaymentForm({ userEmail, userId }) {
       alert('Payment failed: ' + error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleMeterNumberChange = (e) => {
+    const value = e.target.value;
+    // Basic validation - allow only alphanumeric characters and dashes
+    if (/^[a-zA-Z0-9-]*$/.test(value)) {
+      setMeterNumber(value);
     }
   };
 
@@ -91,14 +151,31 @@ export default function PaymentForm({ userEmail, userId }) {
           
           <div className="mb-3">
             <label className="form-label">Meter Number:</label>
-            <input
-              type="text"
-              className="form-control shadow-none"
-              value={meterNumber}
-              onChange={(e) => setMeterNumber(e.target.value)}
-              required
-              placeholder="Enter your meter number"
-            />
+            {fetchingMeter ? (
+              <div className="d-flex align-items-center">
+                <div className="spinner-border spinner-border-sm me-2" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+                <span>Loading your meter number...</span>
+              </div>
+            ) : (
+              <>
+                <input
+                  type="text"
+                  className="form-control shadow-none"
+                  value={meterNumber}
+                  onChange={handleMeterNumberChange}
+                  required
+                  placeholder="Enter your meter number"
+                  maxLength={20}
+                />
+                {userData?.meterId && (
+                  <div className="form-text text-success">
+                    Your registered meter: {userData.meterId}
+                  </div>
+                )}
+              </>
+            )}
           </div>
           
           <div className="mb-3">
@@ -113,13 +190,13 @@ export default function PaymentForm({ userEmail, userId }) {
               required
               placeholder="Enter amount"
             />
-            <details className="form-text titleColor">Minimum amount: ₦100</details>
+            <div className="form-text titleColor">Minimum amount: ₦100</div>
           </div>
           
           <button 
             type="submit" 
             className="btn bColor w-100 font-monospace"
-            disabled={loading}
+            disabled={loading || fetchingMeter}
           >
             {loading ? (
               <>
@@ -140,6 +217,18 @@ export default function PaymentForm({ userEmail, userId }) {
             CVV: 408, PIN: 0000, OTP: 123456
           </small>
         </div>
+
+        {/* Help section for meter number issues */}
+        {!fetchingMeter && (!meterNumber || meterNumber.trim() === '') && (
+          <div className="mt-3 p-3 bg-warning bg-opacity-10 rounded">
+            <h6 className="text-warning">Don't know your meter number?</h6>
+            <small className="text-muted">
+              • Check your electricity bill<br/>
+              • Look at your physical meter<br/>
+              • Contact support if you need help
+            </small>
+          </div>
+        )}
       </div>
     </div>
   );

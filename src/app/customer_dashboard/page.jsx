@@ -87,12 +87,27 @@ export default function UserDashboard() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("userEmail");
-    localStorage.removeItem("userToken");
-    localStorage.removeItem("userData");
-    router.push("/customer-signin");
-  };
+const handleLogout = () => {
+  // Clear all user-related data from localStorage
+  localStorage.removeItem("userEmail");
+  localStorage.removeItem("userToken");
+  localStorage.removeItem("userData");
+  localStorage.removeItem("authToken");
+  localStorage.removeItem("userId");
+  localStorage.removeItem("meterNumber");
+  localStorage.removeItem("lastToken");
+  localStorage.removeItem("lastMeter");
+  localStorage.removeItem("lastUnits");
+  localStorage.removeItem("lastAmount");
+  localStorage.removeItem("purchasedTokens");
+  
+  // Clear any session data
+  sessionStorage.clear();
+  
+  // Redirect to login page
+  router.push("/customer-signin");
+  router.refresh(); // Force refresh to clear any cached state
+};
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
@@ -181,7 +196,7 @@ export default function UserDashboard() {
   };
 
   const navigateToPaymentDashboard = () => {
-    router.push("/customer_payment_dashboard");
+    router.push("/customer_dashboard");
   };
 
   return (
