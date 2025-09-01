@@ -12,9 +12,13 @@ export async function GET(req) {
     const user_id = searchParams.get("user_id");
     const role = searchParams.get("role");
     const status = searchParams.get("status");
+    const priority = searchParams.get("priority");
+    const category = searchParams.get("category");
 
     let filter = {};
-    if (status) filter.status = status.toLowerCase(); // enforce lowercase for enums
+    if (status) filter.status = status.toLowerCase();
+    if (priority) filter.priority = priority.toLowerCase();
+    if (category) filter.category = category;
     if (role === "customer" && user_id) filter.created_by = user_id;
     if (role === "staff" && user_id) filter.assigned_to = user_id;
 
@@ -40,7 +44,7 @@ export async function POST(req) {
   try {
     await connectDB();
 
-    const { title, description, priority, category_id, created_by } =
+    const { title, description, priority, category, created_by } =
       await req.json();
 
     if (!title || !created_by) {
@@ -52,13 +56,21 @@ export async function POST(req) {
 
     const ticket = await Ticket.create({
       title,
-      description,
-      priority: priority?.toLowerCase() || "low", // enforce lowercase enums
-      category: category_id || null,
+      description: description || "",
+      priority: priority?.toLowerCase() || "low",
+      category: category || null,
       created_by,
+      status: "open",
+      createdAt: new Date(),
+      updatedAt: new Date()
     });
 
-    return NextResponse.json(ticket, { status: 201 });
+    // Populate the created ticket before returning
+    const populatedTicket = await Ticket.findById(ticket._id)
+      .populate("category", "name")
+      .populate("created_by", "username email");
+
+    return NextResponse.json(populatedTicket, { status: 201 });
   } catch (err) {
     console.error("❌ Error creating ticket:", err.message);
     return NextResponse.json(

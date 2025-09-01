@@ -1,5 +1,6 @@
+// src/app/api/comments/route.js
 import { NextResponse } from "next/server";
-import dbConnect from "@/lib/mongodb";
+import connectDB from "@/lib/mongodb";
 import Comment from "@/models/Comment";
 import Ticket from "@/models/Ticket";
 import User from "@/models/User";
@@ -7,7 +8,7 @@ import User from "@/models/User";
 // GET comments for a ticket
 export async function GET(req) {
   try {
-    await dbConnect();
+    await connectDB();
     const { searchParams } = new URL(req.url);
     const ticket_id = searchParams.get("ticket_id");
 
@@ -21,14 +22,15 @@ export async function GET(req) {
 
     return NextResponse.json(comments);
   } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error("❌ Error fetching comments:", err.message);
+    return NextResponse.json({ error: "Failed to fetch comments" }, { status: 500 });
   }
 }
 
 // POST add a new comment
 export async function POST(req) {
   try {
-    await dbConnect();
+    await connectDB();
     const { ticket_id, created_by, comment } = await req.json();
 
     if (!ticket_id || !created_by || !comment) {
@@ -54,13 +56,17 @@ export async function POST(req) {
       ticket: ticket_id,
       created_by,
       comment,
+      created_at: new Date(),
+      updated_at: new Date()
     });
 
     // Populate before returning
-    const populatedComment = await newComment.populate("created_by", "username email");
+    const populatedComment = await Comment.findById(newComment._id)
+      .populate("created_by", "username email");
 
     return NextResponse.json(populatedComment, { status: 201 });
   } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error("❌ Error creating comment:", err.message);
+    return NextResponse.json({ error: "Failed to create comment" }, { status: 500 });
   }
 }

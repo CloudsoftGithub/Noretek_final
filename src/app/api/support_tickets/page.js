@@ -1,54 +1,81 @@
+// src/app/api/support_tickets/route.js
 import { NextResponse } from "next/server";
-import dbConnect from "@/lib/mongodb";
+import connectDB from "@/lib/mongodb";
 import SupportTicket from "@/models/SupportTicket";
 
-// GET all tickets
-export async function GET() {
-  await dbConnect();
-
+// GET all support tickets (with filters)
+export async function GET(req) {
   try {
-    const tickets = await SupportTicket.find()
-      .populate("created_by", "name")
+    await connectDB();
+
+    const { searchParams } = new URL(req.url);
+    const user_id = searchParams.get("user_id");
+    const role = searchParams.get("role");
+    const status = searchParams.get("status");
+    const priority = searchParams.get("priority");
+    const category = searchParams.get("category");
+
+    let filter = {};
+    if (status) filter.status = status.toLowerCase();
+    if (priority) filter.priority = priority.toLowerCase();
+    if (category) filter.category_id = category;
+    if (role === "customer" && user_id) filter.created_by = user_id;
+    if (role === "staff" && user_id) filter.assigned_to = user_id;
+
+    const tickets = await SupportTicket.find(filter)
+      .populate("created_by", "name email")
       .populate("category_id", "name")
-      .sort({ created_at: -1 });
+      .populate("assigned_to", "name email")
+      .sort({ created_at: -1 })
+      .lean();
 
-    const result = tickets.map((t) => ({
-      ticket_id: t._id,
-      title: t.title,
-      description: t.description,
-      priority: t.priority,
-      status: t.status,
-      created_by_name: t.created_by?.name || "Unknown",
-      category_name: t.category_id?.name || "Uncategorized",
-      created_at: t.created_at,
-      updated_at: t.updated_at,
-    }));
-
-    return NextResponse.json(result);
+    return NextResponse.json(tickets, { status: 200 });
   } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error("❌ Error fetching support tickets:", err.message);
+    return NextResponse.json(
+      { error: "Failed to fetch support tickets" },
+      { status: 500 }
+    );
   }
 }
 
-// POST create new ticket
+// POST create a new support ticket
 export async function POST(req) {
-  await dbConnect();
-
   try {
-    const { title, description, category_id, priority, status, created_by } =
+    await connectDB();
+
+    const { title, description, priority, category_id, created_by } =
       await req.json();
+
+    if (!title || !created_by) {
+      return NextResponse.json(
+        { error: "Title and created_by are required" },
+        { status: 400 }
+      );
+    }
 
     const ticket = await SupportTicket.create({
       title,
-      description,
-      category_id,
-      priority: priority || "Low",
-      status: status || "Open",
+      description: description || "",
+      priority: priority?.toLowerCase() || "low",
+      category_id: category_id || null,
       created_by,
+      status: "open",
+      created_at: new Date(),
+      updated_at: new Date()
     });
 
-    return NextResponse.json({ ticket_id: ticket._id });
+    // Populate the created ticket before returning
+    const populatedTicket = await SupportTicket.findById(ticket._id)
+      .populate("created_by", "name email")
+      .populate("category_id", "name");
+
+    return NextResponse.json(populatedTicket, { status: 201 });
   } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error("❌ Error creating support ticket:", err.message);
+    return NextResponse.json(
+      { error: "Failed to create support ticket" },
+      { status: 500 }
+    );
   }
 }

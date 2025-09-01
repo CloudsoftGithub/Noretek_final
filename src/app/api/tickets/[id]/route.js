@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Ticket from "@/models/Ticket";
+import { ObjectId } from "mongodb";
 
 // ✅ GET a single ticket by ID
 export async function GET(req, { params }) {
@@ -40,6 +41,7 @@ export async function PUT(req, { params }) {
 
     const updatedTicket = await Ticket.findByIdAndUpdate(params.id, body, {
       new: true,
+      runValidators: true
     })
       .populate("category", "name")
       .populate("created_by", "username email")
