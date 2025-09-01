@@ -3,7 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import db from "@/lib/mongodb";
 
-export const authOptions = {
+const handler = NextAuth({
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -12,23 +12,54 @@ export const authOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        const client = await db;
-        const users = client.db().collection("users");
-        const user = await users.findOne({ email: credentials.email });
-        if (!user) throw new Error("No user found");
+        try {
+          const client = await db;
+          const users = client.db().collection("users");
+          const user = await users.findOne({ email: credentials.email });
+          
+          if (!user) {
+            throw new Error("No user found with this email");
+          }
 
-        const isValid = await compare(credentials.password, user.passwordHash);
-        if (!isValid) throw new Error("Invalid password");
+          const isValid = await compare(credentials.password, user.passwordHash);
+          if (!isValid) {
+            throw new Error("Invalid password");
+          }
 
-        return { id: user._id, email: user.email };
+          return { 
+            id: user._id.toString(), 
+            email: user.email,
+            name: user.name || user.email
+          };
+        } catch (error) {
+          console.error("Auth error:", error);
+          throw new Error("Authentication failed");
+        }
       }
     })
   ],
-  session: { strategy: "jwt" },
+  session: { 
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
   pages: {
-    signIn: "/login"
+    signIn: "/login",
+    error: "/login",
+  },
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (token) {
+        session.user.id = token.id;
+      }
+      return session;
+    }
   }
-};
+});
 
-const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
