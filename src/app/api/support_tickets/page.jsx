@@ -2,44 +2,47 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import Head from "next/head";
+import { useRouter } from "next/navigation";
 import {
   Container,
   Row,
   Col,
   Card,
-  Badge,
+  Table,
   Button,
+  Badge,
   Form,
   Alert,
-  ListGroup,
+  Spinner
 } from "react-bootstrap";
 
-export default function TicketDetail() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const id = searchParams.get("id");
-
-  const [ticket, setTicket] = useState(null);
+export default function SupportTicketsPage() {
+  const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [comments, setComments] = useState([]);
-  const [newComment, setNewComment] = useState("");
+  const [filters, setFilters] = useState({
+    status: "",
+    priority: ""
+  });
+
+  const router = useRouter();
 
   useEffect(() => {
-    if (id) {
-      fetchTicket();
-      fetchComments();
-    }
-  }, [id]);
+    fetchTickets();
+  }, [filters]);
 
-  const fetchTicket = async () => {
+  const fetchTickets = async () => {
     try {
-      const response = await fetch(`/api/tickets/${id}`);
-      if (!response.ok) throw new Error("Failed to fetch ticket");
+      setLoading(true);
+      const queryParams = new URLSearchParams();
+      if (filters.status) queryParams.append('status', filters.status);
+      if (filters.priority) queryParams.append('priority', filters.priority);
+
+      const response = await fetch(`/api/support_tickets?${queryParams}`);
+      if (!response.ok) throw new Error('Failed to fetch tickets');
+      
       const data = await response.json();
-      setTicket(data);
+      setTickets(data);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -47,219 +50,168 @@ export default function TicketDetail() {
     }
   };
 
-  const fetchComments = async () => {
-    try {
-      const response = await fetch(`/api/comments?ticket_id=${id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setComments(data);
-      }
-    } catch (err) {
-      console.error("Error fetching comments:", err);
+  const handleCreateTicket = () => {
+    router.push('/support_tickets/create');
+  };
+
+  const handleViewTicket = (id) => {
+    router.push(`/support_tickets/${id}`);
+  };
+
+  const getStatusVariant = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'open': return 'primary';
+      case 'in progress': return 'info';
+      case 'resolved': return 'success';
+      case 'closed': return 'secondary';
+      default: return 'secondary';
     }
   };
 
-  const handleStatusChange = async (newStatus) => {
-    try {
-      const response = await fetch(`/api/tickets/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (response.ok) {
-        setTicket((prev) => ({ ...prev, status: newStatus }));
-      }
-    } catch (err) {
-      console.error("Error updating status:", err);
+  const getPriorityVariant = (priority) => {
+    switch (priority?.toLowerCase()) {
+      case 'high': return 'danger';
+      case 'medium': return 'warning';
+      case 'low': return 'success';
+      default: return 'secondary';
     }
   };
 
-  const handleAddComment = async () => {
-    if (!newComment.trim()) return;
-
-    try {
-      const response = await fetch("/api/comments", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ticket_id: id,
-          user_id: 1, // TODO: replace with actual authenticated user
-          comment: newComment,
-        }),
-      });
-
-      if (response.ok) {
-        setNewComment("");
-        fetchComments();
-      }
-    } catch (err) {
-      console.error("Error adding comment:", err);
-    }
-  };
-
-  if (loading) return <div className="text-center mt-5">Loading...</div>;
-  if (error) return <Alert variant="danger">Error: {error}</Alert>;
-  if (!ticket) return <Alert variant="warning">Ticket not found</Alert>;
+  if (loading) {
+    return (
+      <Container className="text-center mt-5">
+        <Spinner animation="border" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </Spinner>
+        <p className="mt-2">Loading tickets...</p>
+      </Container>
+    );
+  }
 
   return (
-    <>
-      <Head>
-        <title>Ticket #{ticket.ticket_id} - Support System</title>
-      </Head>
+    <Container className="py-4">
+      <Row className="mb-4">
+        <Col>
+          <h1>Support Tickets</h1>
+          <p className="text-muted">Manage and track all support requests</p>
+        </Col>
+        <Col xs="auto">
+          <Button variant="primary" onClick={handleCreateTicket}>
+            Create New Ticket
+          </Button>
+        </Col>
+      </Row>
 
-      <Container className="py-4">
-        <Button
-          variant="outline-secondary"
-          onClick={() => router.back()}
-          className="mb-3"
-        >
-          ← Back to Dashboard
-        </Button>
+      {error && (
+        <Alert variant="danger" className="mb-4">
+          Error: {error}
+        </Alert>
+      )}
 
-        <Row>
-          <Col md={8}>
-            <Card>
-              <Card.Header className="d-flex justify-content-between align-items-center">
-                <h5 className="mb-0">{ticket.title}</h5>
-                <div>
-                  <Badge bg={getPriorityVariant(ticket.priority)} className="me-2">
-                    {ticket.priority}
-                  </Badge>
-                  <Badge bg={getStatusVariant(ticket.status)}>
-                    {ticket.status}
-                  </Badge>
-                </div>
-              </Card.Header>
-              <Card.Body>
-                <p>{ticket.description}</p>
-                <div className="text-muted small">
-                  <div>Created by: {ticket.created_by_name}</div>
-                  <div>Category: {ticket.category_name}</div>
-                  <div>
-                    Created: {new Date(ticket.created_at).toLocaleString()}
-                  </div>
-                  {ticket.updated_at && (
-                    <div>
-                      Last updated: {new Date(ticket.updated_at).toLocaleString()}
-                    </div>
-                  )}
-                </div>
-              </Card.Body>
-            </Card>
-
-            {/* Comments Section */}
-            <Card className="mt-4">
-              <Card.Header>
-                <h6 className="mb-0">Comments</h6>
-              </Card.Header>
-              <ListGroup variant="flush">
-                {comments.map((comment) => (
-                  <ListGroup.Item key={comment.comment_id}>
-                    <div className="d-flex justify-content-between">
-                      <strong>{comment.user_name}</strong>
-                      <small className="text-muted">
-                        {new Date(comment.created_at).toLocaleString()}
-                      </small>
-                    </div>
-                    <p className="mb-0 mt-1">{comment.comment}</p>
-                  </ListGroup.Item>
-                ))}
-                {comments.length === 0 && (
-                  <ListGroup.Item>
-                    <p className="text-muted text-center mb-0">
-                      No comments yet
-                    </p>
-                  </ListGroup.Item>
-                )}
-              </ListGroup>
-              <Card.Footer>
-                <Form.Group>
-                  <Form.Label>Add Comment</Form.Label>
-                  <Form.Control
-                    as="textarea"
-                    rows={3}
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Type your comment here..."
-                  />
-                </Form.Group>
-                <Button
-                  variant="primary"
-                  onClick={handleAddComment}
-                  className="mt-2"
-                  disabled={!newComment.trim()}
+      {/* Filters */}
+      <Card className="mb-4">
+        <Card.Header>
+          <h6 className="mb-0">Filters</h6>
+        </Card.Header>
+        <Card.Body>
+          <Row>
+            <Col md={4}>
+              <Form.Group>
+                <Form.Label>Status</Form.Label>
+                <Form.Select
+                  value={filters.status}
+                  onChange={(e) => setFilters({...filters, status: e.target.value})}
                 >
-                  Add Comment
-                </Button>
-              </Card.Footer>
-            </Card>
-          </Col>
+                  <option value="">All Statuses</option>
+                  <option value="open">Open</option>
+                  <option value="in progress">In Progress</option>
+                  <option value="resolved">Resolved</option>
+                  <option value="closed">Closed</option>
+                </Form.Select>
+              </Form.Group>
+            </Col>
+            <Col md={4}>
+              <Form.Group>
+                <Form.Label>Priority</Form.Label>
+                <Form.Select
+                  value={filters.priority}
+                  onChange={(e) => setFilters({...filters, priority: e.target.value})}
+                >
+                  <option value="">All Priorities</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </Form.Select>
+              </Form.Group>
+            </Col>
+            <Col md={4} className="d-flex align-items-end">
+              <Button variant="outline-secondary" onClick={() => setFilters({ status: "", priority: "" })}>
+                Clear Filters
+              </Button>
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
 
-          <Col md={4}>
-            <Card>
-              <Card.Header>
-                <h6 className="mb-0">Ticket Actions</h6>
-              </Card.Header>
-              <Card.Body>
-                <Form.Group className="mb-3">
-                  <Form.Label>Change Status</Form.Label>
-                  <Form.Select
-                    value={ticket.status}
-                    onChange={(e) => handleStatusChange(e.target.value)}
-                  >
-                    <option value="Open">Open</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Resolved">Resolved</option>
-                    <option value="Closed">Closed</option>
-                  </Form.Select>
-                </Form.Group>
-
-                <div className="d-grid gap-2">
-                  <Button variant="outline-primary">Assign to Me</Button>
-                  <Button variant="outline-secondary">Add Attachment</Button>
-                  <Button variant="outline-danger">Delete Ticket</Button>
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-      </Container>
-    </>
+      {/* Tickets Table */}
+      <Card>
+        <Card.Header>
+          <h6 className="mb-0">Support Tickets ({tickets.length})</h6>
+        </Card.Header>
+        <Card.Body>
+          {tickets.length === 0 ? (
+            <div className="text-center py-4">
+              <p className="text-muted">No tickets found</p>
+              <Button variant="primary" onClick={handleCreateTicket}>
+                Create Your First Ticket
+              </Button>
+            </div>
+          ) : (
+            <Table responsive striped hover>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Title</th>
+                  <th>Status</th>
+                  <th>Priority</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tickets.map((ticket) => (
+                  <tr key={ticket._id}>
+                    <td>#{ticket._id?.slice(-6)}</td>
+                    <td>{ticket.title}</td>
+                    <td>
+                      <Badge bg={getStatusVariant(ticket.status)}>
+                        {ticket.status}
+                      </Badge>
+                    </td>
+                    <td>
+                      <Badge bg={getPriorityVariant(ticket.priority)}>
+                        {ticket.priority}
+                      </Badge>
+                    </td>
+                    <td>
+                      {ticket.created_at ? new Date(ticket.created_at).toLocaleDateString() : 'N/A'}
+                    </td>
+                    <td>
+                      <Button
+                        variant="outline-primary"
+                        size="sm"
+                        onClick={() => handleViewTicket(ticket._id)}
+                      >
+                        View
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          )}
+        </Card.Body>
+      </Card>
+    </Container>
   );
-}
-
-// ✅ Helper functions
-function getPriorityVariant(priority) {
-  switch (priority) {
-    case "High":
-      return "danger";
-    case "Medium":
-      return "warning";
-    case "Low":
-      return "success";
-    case "Critical":
-      return "dark";
-    default:
-      return "secondary";
-  }
-}
-
-function getStatusVariant(status) {
-  switch (status) {
-    case "Open":
-      return "primary";
-    case "In Progress":
-      return "info";
-    case "Resolved":
-      return "success";
-    case "Closed":
-      return "secondary";
-    default:
-      return "secondary";
-  }
 }
