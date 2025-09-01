@@ -221,7 +221,7 @@ export default function PaymentForm({ userEmail, userId }) {
         {/* Help section for meter number issues */}
         {!fetchingMeter && (!meterNumber || meterNumber.trim() === '') && (
           <div className="mt-3 p-3 bg-warning bg-opacity-10 rounded">
-            <h6 className="text-warning">Don't know your meter number?</h6>
+            <h6 className="text-warning">Don&apos;t know your meter number?</h6>
             <small className="text-muted">
               • Check your electricity bill<br/>
               • Look at your physical meter<br/>

@@ -38,11 +38,11 @@ export default function AboutPage() {
               <blockquote className="mb-4 ">
                 Our journey has been marked by continuous innovation, from
                 implementing smart meter technology to developing our
-                comprehensive customer portal. We've always believed that energy
+                comprehensive customer portal. We&apos;ve always believed that energy
                 should be accessible, reliable, and environmentally responsible.
               </blockquote>
               <blockquote className="mb-4  ">
-                Today, we're proud to be at the forefront of the energy
+                Today, we&apos;re proud to be at the forefront of the energy
                 industry, combining traditional reliability with cutting-edge
                 technology to serve our customers better than ever before.
               </blockquote>
@@ -167,7 +167,7 @@ export default function AboutPage() {
               Leadership Team
             </h2>
             <p className="text-center py-2">
-              Meet the people driving Noreteks success
+              Meet the people driving Noretek&apos;s success
             </p>
           </div>
           <div className=" row text-center justify-content-center py-4 align-items-center ">
@@ -216,6 +216,21 @@ export default function AboutPage() {
                 </div>
               </div>
             </div>
+            <div className=" col-lg-4  pb-3">
+              <div class="card border-0 shadow-sm ">
+                <img
+                  src="/images/placeholder.jpg"
+                  className=" card-img img-fluid rounded-0"
+                  alt=""
+                />
+                <div class="card-body">
+                  <h5 class="card-title fw-bold">Sir. Donwin AG.</h5>
+                  <p class="card-text pt-3 text-primary">
+                    Head of Customer Success
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         <div className="container-fluid bg-primary" data-aos="fade-up">
@@ -224,7 +239,7 @@ export default function AboutPage() {
               <div class="card bg-primary border-0 ">
                 <div class="card-body">
                   <h5 class="card-title fw-bold display-4 text-light">10+</h5>
-                  <p class="card-text text-light">Chief Executive Officer</p>
+                  <p class="card-text text-light">Years of Experience</p>
                 </div>
               </div>
             </div>

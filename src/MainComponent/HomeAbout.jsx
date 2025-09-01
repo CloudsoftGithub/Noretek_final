@@ -29,7 +29,7 @@ export default function HomeAbout() {
                 <div>
                   <h3 className="round-2">Step 2</h3>
                   <p className="ms-4 text-start">
-                    Click on the "Register" or "Create Account" button to
+                    Click on the &quot;Register&quot; or &quot;Create Account&quot; button to
                     complete the process.
                   </p>
                 </div>
