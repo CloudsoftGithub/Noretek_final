@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import dbConnect from "@/lib/mongodbConnect"; // ensure you have a db connection helper
+import { connectDB } from "@/lib/mongodb";
 import SupportComment from "@/models/SupportComment";
 import User from "@/models/User"; // if you already have a User model
 
