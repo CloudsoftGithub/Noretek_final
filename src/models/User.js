@@ -1,4 +1,3 @@
-// src/models/User.js
 import mongoose from "mongoose";
 
 const UserSchema = new mongoose.Schema(
@@ -17,15 +16,13 @@ const UserSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      match: [
-        /^\S+@\S+\.\S+$/,
-        "Please provide a valid email address",
-      ],
+      match: [/^\S+@\S+\.\S+$/, "Please provide a valid email address"],
     },
     password: {
       type: String,
       required: [true, "Password is required"],
       minlength: [6, "Password must be at least 6 characters long"],
+      select: false, // 🚀 ensures password is not returned by default in queries
     },
     role: {
       type: String,
@@ -41,15 +38,32 @@ const UserSchema = new mongoose.Schema(
     },
     profile: {
       fullName: { type: String, trim: true },
-      avatar: { type: String }, // URL to profile picture
+      avatar: { type: String, default: "" }, // URL to profile picture
     },
   },
   { timestamps: true }
 );
 
-// Indexes for faster queries (e.g., login)
-UserSchema.index({ email: 1 });
-UserSchema.index({ username: 1 });
+// ✅ Indexes for optimized search & login lookups
+UserSchema.index({ email: 1 }, { unique: true });
+UserSchema.index({ username: 1 }, { unique: true });
 
-// Prevent model overwrite issues in dev/hot reload
+// ✅ Pre-save middleware to update lastLogin automatically if needed
+UserSchema.pre("save", function (next) {
+  if (this.isModified("lastLogin")) {
+    this.lastLogin = new Date();
+  }
+  next();
+});
+
+// ✅ Transform response to hide sensitive data when converting to JSON
+UserSchema.set("toJSON", {
+  transform: (doc, ret) => {
+    delete ret.password; // remove password field
+    delete ret.__v; // remove mongoose version field
+    return ret;
+  },
+});
+
+// 🚀 Prevent model overwrite in hot reload / dev mode
 export default mongoose.models.User || mongoose.model("User", UserSchema);

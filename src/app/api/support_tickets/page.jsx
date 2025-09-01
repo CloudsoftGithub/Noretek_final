@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
-import Head from 'next/head';
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Head from "next/head";
 import {
   Container,
   Row,
@@ -10,17 +12,19 @@ import {
   Button,
   Form,
   Alert,
-  ListGroup
-} from 'react-bootstrap';
+  ListGroup,
+} from "react-bootstrap";
 
 export default function TicketDetail() {
   const router = useRouter();
-  const { id } = router.query;
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id");
+
   const [ticket, setTicket] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [comments, setComments] = useState([]);
-  const [newComment, setNewComment] = useState('');
+  const [newComment, setNewComment] = useState("");
 
   useEffect(() => {
     if (id) {
@@ -32,7 +36,7 @@ export default function TicketDetail() {
   const fetchTicket = async () => {
     try {
       const response = await fetch(`/api/tickets/${id}`);
-      if (!response.ok) throw new Error('Failed to fetch ticket');
+      if (!response.ok) throw new Error("Failed to fetch ticket");
       const data = await response.json();
       setTicket(data);
     } catch (err) {
@@ -50,25 +54,25 @@ export default function TicketDetail() {
         setComments(data);
       }
     } catch (err) {
-      console.error('Error fetching comments:', err);
+      console.error("Error fetching comments:", err);
     }
   };
 
   const handleStatusChange = async (newStatus) => {
     try {
       const response = await fetch(`/api/tickets/${id}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ status: newStatus }),
       });
 
       if (response.ok) {
-        setTicket(prev => ({ ...prev, status: newStatus }));
+        setTicket((prev) => ({ ...prev, status: newStatus }));
       }
     } catch (err) {
-      console.error('Error updating status:', err);
+      console.error("Error updating status:", err);
     }
   };
 
@@ -76,24 +80,24 @@ export default function TicketDetail() {
     if (!newComment.trim()) return;
 
     try {
-      const response = await fetch('/api/comments', {
-        method: 'POST',
+      const response = await fetch("/api/comments", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           ticket_id: id,
-          user_id: 1, // In a real app, this would come from authentication
+          user_id: 1, // TODO: replace with actual authenticated user
           comment: newComment,
         }),
       });
 
       if (response.ok) {
-        setNewComment('');
+        setNewComment("");
         fetchComments();
       }
     } catch (err) {
-      console.error('Error adding comment:', err);
+      console.error("Error adding comment:", err);
     }
   };
 
@@ -108,7 +112,11 @@ export default function TicketDetail() {
       </Head>
 
       <Container className="py-4">
-        <Button variant="outline-secondary" onClick={() => router.back()} className="mb-3">
+        <Button
+          variant="outline-secondary"
+          onClick={() => router.back()}
+          className="mb-3"
+        >
           ← Back to Dashboard
         </Button>
 
@@ -131,9 +139,13 @@ export default function TicketDetail() {
                 <div className="text-muted small">
                   <div>Created by: {ticket.created_by_name}</div>
                   <div>Category: {ticket.category_name}</div>
-                  <div>Created: {new Date(ticket.created_at).toLocaleString()}</div>
+                  <div>
+                    Created: {new Date(ticket.created_at).toLocaleString()}
+                  </div>
                   {ticket.updated_at && (
-                    <div>Last updated: {new Date(ticket.updated_at).toLocaleString()}</div>
+                    <div>
+                      Last updated: {new Date(ticket.updated_at).toLocaleString()}
+                    </div>
                   )}
                 </div>
               </Card.Body>
@@ -158,7 +170,9 @@ export default function TicketDetail() {
                 ))}
                 {comments.length === 0 && (
                   <ListGroup.Item>
-                    <p className="text-muted text-center mb-0">No comments yet</p>
+                    <p className="text-muted text-center mb-0">
+                      No comments yet
+                    </p>
                   </ListGroup.Item>
                 )}
               </ListGroup>
@@ -218,23 +232,33 @@ export default function TicketDetail() {
   );
 }
 
-// Helper functions
+// ✅ Helper functions
 function getPriorityVariant(priority) {
   switch (priority) {
-    case 'High': return 'danger';
-    case 'Medium': return 'warning';
-    case 'Low': return 'success';
-    case 'Critical': return 'dark';
-    default: return 'secondary';
+    case "High":
+      return "danger";
+    case "Medium":
+      return "warning";
+    case "Low":
+      return "success";
+    case "Critical":
+      return "dark";
+    default:
+      return "secondary";
   }
 }
 
 function getStatusVariant(status) {
   switch (status) {
-    case 'Open': return 'primary';
-    case 'In Progress': return 'info';
-    case 'Resolved': return 'success';
-    case 'Closed': return 'secondary';
-    default: return 'secondary';
+    case "Open":
+      return "primary";
+    case "In Progress":
+      return "info";
+    case "Resolved":
+      return "success";
+    case "Closed":
+      return "secondary";
+    default:
+      return "secondary";
   }
 }
