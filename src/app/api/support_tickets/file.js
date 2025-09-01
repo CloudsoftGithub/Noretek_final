@@ -1,4 +1,5 @@
 // src/app/api/support_tickets/route.js
+//yes
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import SupportTicket from "@/models/SupportTicket";
