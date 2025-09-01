@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import Staff from "@/models/Staff";
-import { connectDB } from "@/lib/db";
+import { connectDB } from "@/lib/mongodb";
 
 const JWT_SECRET = process.env.JWT_SECRET || "supersecret"; // keep in .env file
 
