@@ -1,54 +1,83 @@
-// lib/paymentQueries.js
-import clientPromise from './mongodb';
+// lib/mongodb.js
+import mongoose from "mongoose";
 
-export const paymentQueries = {
-  async createPayment(paymentData) {
-    const client = await clientPromise;
-    const db = client.db(process.env.MONGODB_DB);
-    
-    return db.collection('payments').insertOne({
-      ...paymentData,
-      status: 'pending',
-      created_at: new Date(),
-      updated_at: new Date()
-    });
-  },
+const MONGODB_URI = process.env.MONGODB_URI;
 
-  async getPaymentByReference(reference) {
-    const client = await clientPromise;
-    const db = client.db(process.env.MONGODB_DB);
-    
-    return db.collection('payments').findOne({ reference });
-  },
+if (!MONGODB_URI) {
+  throw new Error(
+    "❌ Please define the MONGODB_URI environment variable inside .env.local"
+  );
+}
 
-  async updatePaymentStatus(reference, status, paid_at = null) {
-    const client = await clientPromise;
-    const db = client.db(process.env.MONGODB_DB);
-    
-    const updateData = {
-      status,
-      updated_at: new Date()
-    };
-    
-    if (paid_at) {
-      updateData.paid_at = paid_at;
-    }
-    
-    const result = await db.collection('payments').updateOne(
-      { reference },
-      { $set: updateData }
-    );
-    
-    return result.modifiedCount > 0;
-  },
+// Global cache to prevent multiple connections in development
+let cached = global.mongoose;
 
-  async getPaymentsByEmail(email) {
-    const client = await clientPromise;
-    const db = client.db(process.env.MONGODB_DB);
-    
-    return db.collection('payments')
-      .find({ customer_email: email })
-      .sort({ created_at: -1 })
-      .toArray();
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
+export default async function connectDB() {
+  if (cached.conn) {
+    console.log("♻️ Using existing MongoDB connection");
+    return cached.conn;
   }
-};
+
+  if (!cached.promise) {
+    const opts = {
+      bufferCommands: false,
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    };
+
+    console.log("🔄 Establishing new MongoDB connection...");
+
+    cached.promise = mongoose
+      .connect(MONGODB_URI, opts)
+      .then((mongoose) => {
+        console.log(
+          "✅ MongoDB Connected Successfully to:",
+          MONGODB_URI.replace(/:[^:]*@/, ":****@") // hide password in logs
+        );
+        return mongoose;
+      })
+      .catch((error) => {
+        console.error("❌ MongoDB Connection Failed:", error.message);
+        cached.promise = null;
+        throw error;
+      });
+  }
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (error) {
+    cached.promise = null;
+    throw new Error(`Database connection failed: ${error.message}`);
+  }
+
+  return cached.conn;
+}
+
+// Handle connection events
+mongoose.connection.on("connected", () => {
+  console.log("✅ Mongoose connected to DB");
+});
+
+mongoose.connection.on("error", (err) => {
+  console.error("❌ Mongoose connection error:", err);
+});
+
+mongoose.connection.on("disconnected", () => {
+  console.log("⚠️ Mongoose disconnected from DB");
+});
+
+process.on("SIGINT", async () => {
+  try {
+    await mongoose.connection.close();
+    console.log("✅ MongoDB connection closed through app termination");
+    process.exit(0);
+  } catch (error) {
+    console.error("❌ Error closing MongoDB connection:", error);
+    process.exit(1);
+  }
+});

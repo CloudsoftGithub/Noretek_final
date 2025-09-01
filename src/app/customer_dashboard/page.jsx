@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import TicketForm from '@/MainComponent/TicketForm'
 
 export default function UserDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -51,7 +52,7 @@ export default function UserDashboard() {
             ...prev,
             email: storedEmail,
             // Meter ID should come from the database, not auto-generated
-            meterId: localStorage.getItem("meterNumber") || "MTR-000000"
+            meterId: localStorage.getItem("meterNumber") || "Not assigned"
           }));
         }
         
@@ -124,7 +125,6 @@ export default function UserDashboard() {
       
       // Save to localStorage (simulating API save)
       localStorage.setItem("userData", JSON.stringify(updatedUserData));
-      localStorage.setItem("meterNumber", updatedUserData.meterId);
       setUserData(updatedUserData);
       
       setSaveStatus("saved");
@@ -433,10 +433,10 @@ export default function UserDashboard() {
                             className="form-control shadow-none"
                             id="meterId"
                             value={userData.meterId}
-                            onChange={(e) => setUserData({...userData, meterId: e.target.value})}
-                            placeholder="Enter your meter ID"
+                            disabled
+                            style={{backgroundColor: '#f2f2f2', fontWeight: 'bold'}}
                           />
-                          <div className="form-text">Your unique meter identifier.</div>
+                          <div className="form-text">Your unique meter identifier. Contact support to change.</div>
                         </div>
                         <div className="mb-3">
                           <label htmlFor="phone" className="form-label">Phone Number</label>
@@ -656,15 +656,7 @@ export default function UserDashboard() {
               <div className="card shadow-sm">
                 <div className="card-body">
                   <form>
-                    <div className="mb-3">
-                      <label htmlFor="subject" className="form-label">Subject</label>
-                      <input type="text" className="form-control shadow-none" id="subject" />
-                    </div>
-                    <div className="mb-3">
-                      <label htmlFor="message" className="form-label">Message</label>
-                      <textarea className="form-control shadow-none" id="message" rows="5"></textarea>
-                    </div>
-                    <button type="submit" className="btn primaryColor">Send Message</button>
+                  <TicketForm />
                   </form>
                 </div>
               </div>

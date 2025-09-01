@@ -1,39 +1,30 @@
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
-import Head from 'next/head';
-import {
-  Container,
-  Row,
-  Col,
-  Card,
-  Badge,
-  Button,
-  Form,
-  Alert,
-  ListGroup
-} from 'react-bootstrap';
+"use client";
 
-export default function TicketDetail() {
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Head from "next/head";
+
+export default function TicketDetail({ params }) {
   const router = useRouter();
-  const { id } = router.query;
+  const { id } = params;
+
   const [ticket, setTicket] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [comments, setComments] = useState([]);
-  const [newComment, setNewComment] = useState('');
+  const [newComment, setNewComment] = useState("");
 
   useEffect(() => {
-    if (id) {
-      fetchTicket();
-      fetchComments();
-    }
+    if (!id) return;
+    fetchTicket();
+    fetchComments();
   }, [id]);
 
   const fetchTicket = async () => {
     try {
-      const response = await fetch(`/api/tickets/${id}`);
-      if (!response.ok) throw new Error('Failed to fetch ticket');
-      const data = await response.json();
+      const res = await fetch(`/api/tickets/${id}`);
+      if (!res.ok) throw new Error("Failed to fetch ticket");
+      const data = await res.json();
       setTicket(data);
     } catch (err) {
       setError(err.message);
@@ -44,31 +35,29 @@ export default function TicketDetail() {
 
   const fetchComments = async () => {
     try {
-      const response = await fetch(`/api/comments?ticket_id=${id}`);
-      if (response.ok) {
-        const data = await response.json();
+      const res = await fetch(`/api/comments?ticket_id=${id}`);
+      if (res.ok) {
+        const data = await res.json();
         setComments(data);
       }
     } catch (err) {
-      console.error('Error fetching comments:', err);
+      console.error("Error fetching comments:", err);
     }
   };
 
   const handleStatusChange = async (newStatus) => {
     try {
-      const response = await fetch(`/api/tickets/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const res = await fetch(`/api/tickets/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       });
 
-      if (response.ok) {
-        setTicket(prev => ({ ...prev, status: newStatus }));
+      if (res.ok) {
+        setTicket((prev) => ({ ...prev, status: newStatus }));
       }
     } catch (err) {
-      console.error('Error updating status:', err);
+      console.error("Error updating status:", err);
     }
   };
 
@@ -76,165 +65,184 @@ export default function TicketDetail() {
     if (!newComment.trim()) return;
 
     try {
-      const response = await fetch('/api/comments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const res = await fetch("/api/comments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ticket_id: id,
-          user_id: 1, // In a real app, this would come from authentication
+          created_by: "64fexampleuserid", // replace with logged-in user
           comment: newComment,
         }),
       });
 
-      if (response.ok) {
-        setNewComment('');
+      if (res.ok) {
+        setNewComment("");
         fetchComments();
       }
     } catch (err) {
-      console.error('Error adding comment:', err);
+      console.error("Error adding comment:", err);
     }
   };
 
   if (loading) return <div className="text-center mt-5">Loading...</div>;
-  if (error) return <Alert variant="danger">Error: {error}</Alert>;
-  if (!ticket) return <Alert variant="warning">Ticket not found</Alert>;
+  if (error) return <div className="alert alert-danger">Error: {error}</div>;
+  if (!ticket) return <div className="alert alert-warning">Ticket not found</div>;
 
   return (
     <>
       <Head>
-        <title>Ticket #{ticket.ticket_id} - Support System</title>
+        <title>Ticket - {ticket.title}</title>
       </Head>
 
-      <Container className="py-4">
-        <Button variant="outline-secondary" onClick={() => router.back()} className="mb-3">
+      <div className="container py-4">
+        <button
+          className="btn btn-outline-secondary mb-3"
+          onClick={() => router.back()}
+        >
           ← Back to Dashboard
-        </Button>
+        </button>
 
-        <Row>
-          <Col md={8}>
-            <Card>
-              <Card.Header className="d-flex justify-content-between align-items-center">
+        <div className="row">
+          {/* Ticket Details */}
+          <div className="col-md-8">
+            <div className="card">
+              <div className="card-header d-flex justify-content-between align-items-center">
                 <h5 className="mb-0">{ticket.title}</h5>
                 <div>
-                  <Badge bg={getPriorityVariant(ticket.priority)} className="me-2">
+                  <span
+                    className={`badge bg-${getPriorityVariant(ticket.priority)} me-2`}
+                  >
                     {ticket.priority}
-                  </Badge>
-                  <Badge bg={getStatusVariant(ticket.status)}>
+                  </span>
+                  <span className={`badge bg-${getStatusVariant(ticket.status)}`}>
                     {ticket.status}
-                  </Badge>
+                  </span>
                 </div>
-              </Card.Header>
-              <Card.Body>
+              </div>
+              <div className="card-body">
                 <p>{ticket.description}</p>
                 <div className="text-muted small">
-                  <div>Created by: {ticket.created_by_name}</div>
-                  <div>Category: {ticket.category_name}</div>
-                  <div>Created: {new Date(ticket.created_at).toLocaleString()}</div>
-                  {ticket.updated_at && (
-                    <div>Last updated: {new Date(ticket.updated_at).toLocaleString()}</div>
+                  <div>Created by: {ticket.created_by?.username}</div>
+                  <div>Category: {ticket.category?.name}</div>
+                  <div>
+                    Created: {new Date(ticket.createdAt).toLocaleString()}
+                  </div>
+                  {ticket.updatedAt && (
+                    <div>
+                      Last updated: {new Date(ticket.updatedAt).toLocaleString()}
+                    </div>
                   )}
                 </div>
-              </Card.Body>
-            </Card>
+              </div>
+            </div>
 
-            {/* Comments Section */}
-            <Card className="mt-4">
-              <Card.Header>
+            {/* Comments */}
+            <div className="card mt-4">
+              <div className="card-header">
                 <h6 className="mb-0">Comments</h6>
-              </Card.Header>
-              <ListGroup variant="flush">
-                {comments.map((comment) => (
-                  <ListGroup.Item key={comment.comment_id}>
+              </div>
+              <ul className="list-group list-group-flush">
+                {comments.map((c) => (
+                  <li key={c._id} className="list-group-item">
                     <div className="d-flex justify-content-between">
-                      <strong>{comment.user_name}</strong>
+                      <strong>{c.created_by?.username}</strong>
                       <small className="text-muted">
-                        {new Date(comment.created_at).toLocaleString()}
+                        {new Date(c.created_at).toLocaleString()}
                       </small>
                     </div>
-                    <p className="mb-0 mt-1">{comment.comment}</p>
-                  </ListGroup.Item>
+                    <p className="mb-0 mt-1">{c.comment}</p>
+                  </li>
                 ))}
                 {comments.length === 0 && (
-                  <ListGroup.Item>
+                  <li className="list-group-item">
                     <p className="text-muted text-center mb-0">No comments yet</p>
-                  </ListGroup.Item>
+                  </li>
                 )}
-              </ListGroup>
-              <Card.Footer>
-                <Form.Group>
-                  <Form.Label>Add Comment</Form.Label>
-                  <Form.Control
-                    as="textarea"
+              </ul>
+              <div className="card-footer">
+                <div className="mb-2">
+                  <label className="form-label">Add Comment</label>
+                  <textarea
+                    className="form-control"
                     rows={3}
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                     placeholder="Type your comment here..."
                   />
-                </Form.Group>
-                <Button
-                  variant="primary"
+                </div>
+                <button
+                  className="btn btn-primary mt-2"
                   onClick={handleAddComment}
-                  className="mt-2"
                   disabled={!newComment.trim()}
                 >
                   Add Comment
-                </Button>
-              </Card.Footer>
-            </Card>
-          </Col>
+                </button>
+              </div>
+            </div>
+          </div>
 
-          <Col md={4}>
-            <Card>
-              <Card.Header>
+          {/* Ticket Actions */}
+          <div className="col-md-4">
+            <div className="card">
+              <div className="card-header">
                 <h6 className="mb-0">Ticket Actions</h6>
-              </Card.Header>
-              <Card.Body>
-                <Form.Group className="mb-3">
-                  <Form.Label>Change Status</Form.Label>
-                  <Form.Select
+              </div>
+              <div className="card-body">
+                <div className="mb-3">
+                  <label className="form-label">Change Status</label>
+                  <select
+                    className="form-select"
                     value={ticket.status}
                     onChange={(e) => handleStatusChange(e.target.value)}
                   >
-                    <option value="Open">Open</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Resolved">Resolved</option>
-                    <option value="Closed">Closed</option>
-                  </Form.Select>
-                </Form.Group>
+                    <option value="open">Open</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="resolved">Resolved</option>
+                    <option value="closed">Closed</option>
+                  </select>
+                </div>
 
                 <div className="d-grid gap-2">
-                  <Button variant="outline-primary">Assign to Me</Button>
-                  <Button variant="outline-secondary">Add Attachment</Button>
-                  <Button variant="outline-danger">Delete Ticket</Button>
+                  <button className="btn btn-outline-primary">Assign to Me</button>
+                  <button className="btn btn-outline-secondary">Add Attachment</button>
+                  <button className="btn btn-outline-danger">Delete Ticket</button>
                 </div>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-      </Container>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </>
   );
 }
 
-// Helper functions
+// ✅ Helper functions for badge colors
 function getPriorityVariant(priority) {
-  switch (priority) {
-    case 'High': return 'danger';
-    case 'Medium': return 'warning';
-    case 'Low': return 'success';
-    case 'Critical': return 'dark';
-    default: return 'secondary';
+  switch (priority?.toLowerCase()) {
+    case "high":
+      return "danger";
+    case "medium":
+      return "warning";
+    case "low":
+      return "success";
+    case "critical":
+      return "dark";
+    default:
+      return "secondary";
   }
 }
 
 function getStatusVariant(status) {
-  switch (status) {
-    case 'Open': return 'primary';
-    case 'In Progress': return 'info';
-    case 'Resolved': return 'success';
-    case 'Closed': return 'secondary';
-    default: return 'secondary';
+  switch (status?.toLowerCase()) {
+    case "open":
+      return "primary";
+    case "in_progress":
+      return "info";
+    case "resolved":
+      return "success";
+    case "closed":
+      return "secondary";
+    default:
+      return "secondary";
   }
 }

@@ -1,3 +1,4 @@
+// src/models/Payment.js
 import mongoose from "mongoose";
 
 const PaymentSchema = new mongoose.Schema(
@@ -6,37 +7,43 @@ const PaymentSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
-      index: true, // quick lookup
+      index: true,
     },
     user_id: {
-      type: String,
-      required: true,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: false,   // ✅ was true, now optional
       index: true,
+      default: null,
     },
     customer_email: {
       type: String,
       required: true,
       index: true,
-      match: /.+\@.+\..+/, // basic email validation
+      lowercase: true,
+      trim: true,
+      match: [/^\S+@\S+\.\S+$/, "Invalid email format"],
     },
     amount: {
       type: Number,
       required: true,
-      min: 0,
+      min: [0, "Amount must be >= 0"],
     },
     currency: {
       type: String,
       default: "NGN",
-      enum: ["NGN", "USD", "EUR"], // add more if needed
+      enum: ["NGN", "USD", "EUR"],
     },
     channel: {
       type: String,
       default: "paystack",
+      enum: ["paystack", "flutterwave", "stripe"],
     },
     status: {
       type: String,
       enum: ["pending", "success", "failed"],
       default: "pending",
+      index: true,
     },
     metadata: {
       type: mongoose.Schema.Types.Mixed,
@@ -48,17 +55,18 @@ const PaymentSchema = new mongoose.Schema(
     },
   },
   {
-    timestamps: { createdAt: "created_at", updatedAt: "updated_at" }, // auto-manage dates
+    timestamps: {
+      createdAt: "created_at",
+      updatedAt: "updated_at",
+    },
   }
 );
 
-// Keep updated_at fresh on manual save
 PaymentSchema.pre("save", function (next) {
-  this.updated_at = Date.now();
+  this.updated_at = new Date();
   next();
 });
 
-// Reuse model if already compiled (important in Next.js hot reload)
 const Payment =
   mongoose.models.Payment || mongoose.model("Payment", PaymentSchema);
 

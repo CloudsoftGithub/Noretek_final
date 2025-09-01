@@ -1,100 +1,114 @@
 // lib/mongodb.js
-import { MongoClient } from "mongodb";
+import mongoose from "mongoose";
 
-const uri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/noretek_energy_db";
-const options = {
-  maxPoolSize: 10,
-  minPoolSize: 2,
-  maxIdleTimeMS: 10000,
-  serverSelectionTimeoutMS: 5000,
-  socketTimeoutMS: 45000,
-};
+const MONGODB_URI = process.env.MONGODB_URI;
 
-let client;
+if (!MONGODB_URI) {
+  throw new Error(
+    "❌ Please define the MONGODB_URI environment variable inside .env.local"
+  );
+}
+
+// --- Global cache for mongoose connection ---
+let cached = global.mongoose;
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
+// --- Global cache for native MongoDB client ---
 let clientPromise;
 
-if (!uri) {
-  throw new Error("❌ Please add your MONGODB_URI to .env.local");
+// --- Function to get the native MongoDB client (for raw queries) ---
+export function getClientPromise() {
+  if (clientPromise) {
+    return clientPromise;
+  }
+
+  const { MongoClient } = require("mongodb");
+
+  const options = {
+    maxPoolSize: 10,
+    serverSelectionTimeoutMS: 5000,
+  };
+
+  if (process.env.NODE_ENV === "development") {
+    // Reuse global connection in dev (hot reload friendly)
+    if (!global._mongoClientPromise) {
+      const client = new MongoClient(MONGODB_URI, options);
+      global._mongoClientPromise = client.connect();
+    }
+    clientPromise = global._mongoClientPromise;
+  } else {
+    // Always create a new client in production
+    const client = new MongoClient(MONGODB_URI, options);
+    clientPromise = client.connect();
+  }
+
+  return clientPromise;
 }
 
-// In development, use global to preserve the value across hot reloads
-if (process.env.NODE_ENV === "development") {
-  if (!global._mongoClientPromise) {
-    console.log("🔄 Creating new MongoDB connection for development...");
-    client = new MongoClient(uri, options);
-    global._mongoClientPromise = client.connect()
-      .then((connectedClient) => {
-        console.log("✅ MongoDB Connected Successfully");
-        return connectedClient;
-      })
-      .catch((error) => {
-        console.error("❌ MongoDB Connection Failed:", error.message);
-        global._mongoClientPromise = null;
-        throw error;
-      });
+// --- Main connectDB function using Mongoose ---
+async function connectDB() {
+  if (cached.conn) {
+    console.log("♻️ Using existing MongoDB (Mongoose) connection");
+    return cached.conn;
   }
-  clientPromise = global._mongoClientPromise;
-} else {
-  // In production, create a new client instance
-  console.log("🔄 Creating new MongoDB connection for production...");
-  client = new MongoClient(uri, options);
-  clientPromise = client.connect()
-    .then((connectedClient) => {
-      console.log("✅ MongoDB Connected Successfully");
-      return connectedClient;
-    })
-    .catch((error) => {
-      console.error("❌ MongoDB Connection Failed:", error.message);
-      throw error;
+
+  if (!cached.promise) {
+    console.log("🔄 Establishing new MongoDB (Mongoose) connection...");
+
+    const opts = {
+      bufferCommands: false,
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    };
+
+    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+      console.log(
+        "✅ MongoDB (Mongoose) Connected Successfully:",
+        MONGODB_URI.replace(/:[^:]*@/, ":****@") // mask password
+      );
+      return mongoose;
     });
-}
-
-// Helper function to get database instance
-export async function getDatabase(dbName = "noretek_energy_db") {
-  try {
-    const client = await clientPromise;
-    return client.db(dbName);
-  } catch (error) {
-    console.error("❌ Failed to get database:", error.message);
-    throw error;
   }
-}
 
-// Helper function to check connection status
-export async function checkConnection() {
   try {
-    const client = await clientPromise;
-    await client.db().admin().ping();
-    return { connected: true, message: "✅ MongoDB connection is healthy" };
+    cached.conn = await cached.promise;
   } catch (error) {
-    return { connected: false, message: `❌ MongoDB connection error: ${error.message}` };
+    cached.promise = null;
+    console.error("❌ MongoDB connection failed:", error.message);
+    throw new Error(`Database connection failed: ${error.message}`);
   }
+
+  return cached.conn;
 }
 
-// Close connection gracefully
-export async function closeConnection() {
-  try {
-    if (client) {
-      await client.close();
-      console.log("✅ MongoDB connection closed gracefully");
-    }
-    if (global._mongoClientPromise) {
-      global._mongoClientPromise = null;
-    }
-  } catch (error) {
-    console.error("❌ Error closing MongoDB connection:", error.message);
-  }
-}
-
-// Handle process termination
-process.on('SIGINT', async () => {
-  await closeConnection();
-  process.exit(0);
+// --- Mongoose connection event listeners ---
+mongoose.connection.on("connected", () => {
+  console.log("✅ Mongoose connected to DB");
 });
 
-process.on('SIGTERM', async () => {
-  await closeConnection();
-  process.exit(0);
+mongoose.connection.on("error", (err) => {
+  console.error("❌ Mongoose connection error:", err);
 });
 
-export default clientPromise;
+mongoose.connection.on("disconnected", () => {
+  console.log("⚠️ Mongoose disconnected from DB");
+});
+
+// Graceful shutdown
+process.on("SIGINT", async () => {
+  try {
+    await mongoose.connection.close();
+    console.log("✅ MongoDB connection closed through app termination");
+    process.exit(0);
+  } catch (error) {
+    console.error("❌ Error closing MongoDB connection:", error);
+    process.exit(1);
+  }
+});
+
+// ✅ Export both
+export default connectDB;     // for Mongoose models
+export { connectDB };         // named export (optional)

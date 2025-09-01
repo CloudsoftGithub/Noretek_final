@@ -9,7 +9,8 @@ export default function TicketDetailsPage({ params }) {
 
   // Fetch ticket details
   useEffect(() => {
-    fetch(`/api/support_tickets/${id}`)
+    if (!id) return;
+    fetch(`/api/tickets/${id}`)
       .then((res) => res.json())
       .then((data) => setTicket(data))
       .catch((err) => console.error("Ticket fetch error:", err));
@@ -17,7 +18,8 @@ export default function TicketDetailsPage({ params }) {
 
   // Fetch comments
   useEffect(() => {
-    fetch(`/api/support_comments?ticket_id=${id}`)
+    if (!id) return;
+    fetch(`/api/comments?ticket_id=${id}`)
       .then((res) => res.json())
       .then((data) => setComments(data))
       .catch((err) => console.error("Comments fetch error:", err));
@@ -27,19 +29,27 @@ export default function TicketDetailsPage({ params }) {
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
 
-    const res = await fetch("/api/support_comments", {
+    const res = await fetch("/api/comments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ticket_id: id,
-        comment_text: newComment,
-        created_by: 1, // replace with logged in user ID
+        comment: newComment,
+        created_by: "64fexampleuserid", // TODO: replace with logged-in user id
       }),
     });
 
     const data = await res.json();
     if (res.ok) {
-      setComments([...comments, { ...data, comment_text: newComment, created_by: "Current User", created_at: new Date() }]);
+      setComments([
+        ...comments,
+        {
+          ...data,
+          comment: newComment,
+          created_by: { username: "Current User" },
+          created_at: new Date(),
+        },
+      ]);
       setNewComment("");
     } else {
       alert("Error: " + data.error);
@@ -59,9 +69,10 @@ export default function TicketDetailsPage({ params }) {
           <p>
             <strong>Priority:</strong> {ticket.priority} <br />
             <strong>Status:</strong> {ticket.status} <br />
-            <strong>Category:</strong> {ticket.category} <br />
-            <strong>Created By:</strong> {ticket.created_by} <br />
-            <strong>Created At:</strong> {new Date(ticket.created_at).toLocaleString()}
+            <strong>Category:</strong> {ticket.category?.name} <br />
+            <strong>Created By:</strong> {ticket.created_by?.username} <br />
+            <strong>Created At:</strong>{" "}
+            {new Date(ticket.createdAt).toLocaleString()}
           </p>
         </div>
       </div>
@@ -69,8 +80,8 @@ export default function TicketDetailsPage({ params }) {
       <h5>Comments</h5>
       <ul className="list-group mb-3">
         {comments.map((c) => (
-          <li key={c.comment_id} className="list-group-item">
-            <strong>{c.created_by}</strong>: {c.comment_text} <br />
+          <li key={c._id} className="list-group-item">
+            <strong>{c.created_by?.username}</strong>: {c.comment} <br />
             <small>{new Date(c.created_at).toLocaleString()}</small>
           </li>
         ))}

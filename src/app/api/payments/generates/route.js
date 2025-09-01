@@ -1,12 +1,13 @@
 // app/api/payments/generates/route.js
 import { NextResponse } from "next/server";
-import { paymentQueries } from "@/lib/paymentQueries";
 import connectDB from "@/lib/mongodb";
-import Token from "@/lib/db";
+import Payment from "@/models/Payment";
+import Token from "@/models/Token";
 
 export async function POST(request) {
+  await connectDB();
+
   try {
-    await connectDB();
     const { reference, amount, meterNumber } = await request.json();
 
     if (!reference || !amount || !meterNumber) {
@@ -16,7 +17,8 @@ export async function POST(request) {
       );
     }
 
-    const payment = await paymentQueries.getPaymentByReference(reference);
+    // ✅ Validate payment
+    const payment = await Payment.findOne({ reference });
     if (!payment || payment.status !== "success") {
       return NextResponse.json(
         { success: false, message: "Payment not found or not successful" },
@@ -24,17 +26,18 @@ export async function POST(request) {
       );
     }
 
-    // ✅ Check if token exists
+    // ✅ Check if token already exists
     const existingToken = await Token.findOne({ reference });
     if (existingToken) {
       return NextResponse.json({
         success: true,
         token: existingToken.token,
-        meterNumber,
+        meterNumber: existingToken.meter_number,
         units: existingToken.units,
-        amount,
+        amount: existingToken.amount,
         reference,
         message: "Token already generated",
+        expiresAt: existingToken.expires_at.toISOString(),
       });
     }
 
@@ -75,7 +78,7 @@ export async function POST(request) {
         });
       } catch (error) {
         if (error.code === 11000 && attempts < maxAttempts) {
-          console.warn(`Duplicate token detected, retrying (${attempts}/${maxAttempts})`);
+          console.warn(`⚠️ Duplicate token detected, retrying (${attempts}/${maxAttempts})`);
           continue;
         }
         throw error;
@@ -84,7 +87,10 @@ export async function POST(request) {
 
     throw new Error("Failed to generate unique token after multiple attempts");
   } catch (error) {
-    console.error("Token generation error:", error);
-    return NextResponse.json({ success: false, message: "Internal server error: " + error.message }, { status: 500 });
+    console.error("❌ Token generation error:", error);
+    return NextResponse.json(
+      { success: false, message: "Internal server error: " + error.message },
+      { status: 500 }
+    );
   }
 }

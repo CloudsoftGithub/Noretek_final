@@ -663,7 +663,7 @@ export default function CustomerPaymentDashboard() {
                   className="btn btn-success"
                   onClick={() => setShowSuccessModal(false)}
                 >
-                  Continue Shopping
+                  Continue 
                 </button>
               </div>
             </div>
