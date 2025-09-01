@@ -23,7 +23,7 @@ export default function CustomerPaymentDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // ✅ Check if we're in browser environment first
+        // ✅ Check if we&apos;re in browser environment first
         if (typeof window === 'undefined') {
           setLoading(false);
           return;
@@ -549,7 +549,7 @@ export default function CustomerPaymentDashboard() {
   const formatToken = (token) => {
     if (!token) return 'N/A';
     
-    // Remove any non-numeric characters and ensure it's exactly 20 digits
+    // Remove any non-numeric characters and ensure it&apos;s exactly 20 digits
     const numericToken = token.replace(/\D/g, '').substring(0, 20);
     
     // Pad with zeros if needed to make it exactly 20 digits
@@ -635,9 +635,9 @@ export default function CustomerPaymentDashboard() {
                   <div className="alert alert-info mt-4">
                     <h6 className="mb-2">How to use your token:</h6>
                     <ol className="mb-0 small">
-                      <li>Press the 'Enter' button on your meter</li>
+                      <li>Press the &apos;Enter&apos; button on your meter</li>
                       <li>Enter the 20-digit token when prompted</li>
-                      <li>Press 'Enter' again to confirm</li>
+                      <li>Press &apos;Enter&apos; again to confirm</li>
                       <li>Wait for the meter to validate and load the units</li>
                     </ol>
                   </div>
@@ -724,9 +724,9 @@ export default function CustomerPaymentDashboard() {
                   <div className="alert alert-info mt-4">
                     <h6 className="mb-2">How to use your token:</h6>
                     <ol className="mb-0 small">
-                      <li>Press the 'Enter' button on your meter</li>
+                      <li>Press the &apos;Enter&apos; button on your meter</li>
                       <li>Enter the 20-digit token when prompted</li>
-                      <li>Press 'Enter' again to confirm</li>
+                      <li>Press &apos;Enter&apos; again to confirm</li>
                       <li>Wait for the meter to validate and load the units</li>
                     </ol>
                   </div>
