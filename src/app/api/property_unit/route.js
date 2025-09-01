@@ -1,6 +1,6 @@
 import PropertyUnit from "@/models/PropertyUnit";
 import Property from "@/models/Property";
-import { connectDB } from "@/lib/db";
+import { connectDB } from "@/lib/mongodb";
 
 // GET all units
 export async function GET() {

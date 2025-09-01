@@ -1,7 +1,7 @@
 // app/api/property/route.js
 import { NextResponse } from "next/server";
 import Property from "@/models/Property";
-import { connectDB } from "@/lib/db";
+import { connectDB } from "@/lib/mongodb";
 
 // GET all properties
 export async function GET() {
