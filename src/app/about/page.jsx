@@ -1,6 +1,6 @@
 import Navbar from "@/MainComponent/Navbar";
 import Link from "next/link";
-
+import Image from 'next/image';
 export default function AboutPage() {
   return (
     <>
@@ -49,13 +49,13 @@ export default function AboutPage() {
             </div>
             <div className=" col-lg-6  pt-2 pb-4 flex-grow-0">
               <div className="shadow-sm ">
-                <img
-                  src="/images/placeholder.jpg"
-                  alt=" testimonial"
-                  width={150}
-                  height={90}
-                  className="w-100 h-75 card-img"
-                />
+              <Image
+                src="/images/placeholder.jpg"
+                alt="testimonial"
+                width={150}
+                height={90}
+                className="w-100 h-75 card-img"
+                 />
               </div>
             </div>
           </div>

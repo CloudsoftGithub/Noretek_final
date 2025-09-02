@@ -17,7 +17,7 @@ import UserList from "@/MainComponent/UserList";
 import PropertyTables from "@/MainComponent/(SubComponents)/AdminComponent/ViewProperty";
 import PropertyUnitTables from "@/MainComponent/(SubComponents)/AdminComponent/ViewPropertyUinit";
 import AdminSupportDashboard from "../admin_support_dashboard/page";
-
+import Image from 'next/image';
 
 ChartJS.register(
   ArcElement,

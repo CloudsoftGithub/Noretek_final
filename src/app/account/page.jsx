@@ -156,6 +156,7 @@ export default function AccountPage() {
   };
 
   // Table functions
+  useEffect(() => {
   const fetchAccounts = async () => {
     setLoading(true);
     try {
@@ -204,6 +205,8 @@ export default function AccountPage() {
     }
   };
 
+  fetchAccounts();
+}, [searchField, searchTerm, pagination.pageNumber, pagination.pageSize, sortField, sortOrder, token]); // Add all dependencies
   const handlePageChange = (newPage) => {
     if (newPage > 0 && newPage <= pagination.totalPages) {
       setPagination(prev => ({ ...prev, pageNumber: newPage }));
