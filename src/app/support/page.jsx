@@ -9,7 +9,7 @@ export default function SupportPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch('/api/support')
+    fetch('/api/support') // Now calls the API endpoint
       .then(res => {
         if (!res.ok) {
           throw new Error('Failed to fetch tickets');
@@ -17,7 +17,7 @@ export default function SupportPage() {
         return res.json();
       })
       .then(data => {
-        setTickets(data);
+        setTickets(data.tickets || []);
         setLoading(false);
       })
       .catch(err => {
@@ -75,7 +75,6 @@ export default function SupportPage() {
   );
 }
 
-// Helper function for status colors
 function getStatusColor(status) {
   switch (status?.toLowerCase()) {
     case 'open': return 'primary';
