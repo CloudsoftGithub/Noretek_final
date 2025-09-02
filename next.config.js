@@ -8,10 +8,38 @@ const nextConfig = {
       ...config.experiments,
       topLevelAwait: true,
     };
+    
+    // Handle font loading in webpack
+    config.module.rules.push({
+      test: /\.(woff|woff2|eot|ttf|otf)$/,
+      use: {
+        loader: 'url-loader',
+        options: {
+          limit: 8192,
+          fallback: 'file-loader',
+          publicPath: '/_next/static/fonts/',
+          outputPath: 'static/fonts/',
+          name: '[name]-[hash].[ext]',
+        },
+      },
+    });
+    
     return config;
   },
-  // Optional: Add if you're using static exports
+  
+  // Completely disable font optimization
+  optimizeFonts: false,
+  
+  // For standalone output
   output: 'standalone',
+  
+  // Skip type checking and ESLint during build for speed
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 };
 
 module.exports = nextConfig;

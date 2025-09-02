@@ -1,5 +1,7 @@
 // lib/paystack.js
-import { initializeTransaction, verifyTransaction } from '@/lib/paystack';
+// ❌ REMOVE THIS LINE - it's causing circular import
+// import { initializeTransaction, verifyTransaction } from '@/lib/paystack';
+
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 const PAYSTACK_BASE_URL = 'https://api.paystack.co';
 
@@ -91,24 +93,5 @@ export const getPaymentHistory = async (email) => {
   }
 };
 
-// ✅ Choose ONE of these export methods:
-
-// Option 1: Keep only named exports (recommended)
-// You're already exporting each function individually above
-// No need for additional exports
-
-// Option 2: If you want a default export object
-// export default {
-//   initializeTransaction,
-//   verifyTransaction,
-//   getPaymentHistory
-// };
-
-// Option 3: If you want both named and default exports
-const paystack = {
-  initializeTransaction,
-  verifyTransaction,
-  getPaymentHistory
-};
-
-export default paystack;
+// ✅ Choose ONE export method (I recommend named exports only)
+// Remove the default export if you're using named imports
