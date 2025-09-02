@@ -1,17 +1,19 @@
 "use client";
+
 import { SessionProvider } from "@/contexts/SessionContext";
-import "./globals.css";
+import "./globals.css"; // Your CSS file with all the styles you provided
 import { Inter } from "next/font/google";
 import { useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
-import "bootstrap-icons/font/bootstrap-icons.css"; // ✅ load icons directly from node_modules
+import "bootstrap-icons/font/bootstrap-icons.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export default function RootLayout({ children }) {
   useEffect(() => {
-    // Import Bootstrap JavaScript
-    import("bootstrap/dist/js/bootstrap.bundle.min.js");
+    if (typeof window !== "undefined") {
+      import("bootstrap/dist/js/bootstrap.bundle.min.js");
+    }
   }, []);
 
   return (
@@ -21,6 +23,7 @@ export default function RootLayout({ children }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="description" content="Electricity Token Purchase System" />
         <link rel="icon" href="/favicon.ico" />
+        {/* You can add any other head tags here */}
       </head>
       <body className={inter.className}>
         <SessionProvider>{children}</SessionProvider>
