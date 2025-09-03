@@ -3,6 +3,9 @@
 import "./customer.css";
 import { Inter } from "next/font/google";
 import { useEffect } from "react";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap-icons";
+import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 {
