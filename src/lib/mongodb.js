@@ -30,7 +30,7 @@ export function getClientPromise() {
     maxPoolSize: 10,
     serverSelectionTimeoutMS: 10000, // Increased timeout
     socketTimeoutMS: 45000,
-    ssl: true,
+    ssl: true, // This is fine for native MongoDB client
     tlsAllowInvalidCertificates: false,
     retryWrites: true,
     w: 'majority'
@@ -62,20 +62,21 @@ async function connectDB() {
   if (!cached.promise) {
     console.log("🔄 Establishing new MongoDB (Mongoose) connection...");
 
+    // ✅ FIXED: Use string values instead of booleans for Mongoose
     const opts = {
       bufferCommands: false,
       maxPoolSize: 10,
-      serverSelectionTimeoutMS: 10000, // Increased timeout
+      serverSelectionTimeoutMS: 10000,
       socketTimeoutMS: 45000,
-      // SSL/TLS configuration for MongoDB Atlas
-      ssl: true,
-      tls: true,
-      tlsAllowInvalidCertificates: false,
-      retryWrites: true,
+      // Use string values for SSL/TLS configuration
+      ssl: 'true', // Changed from true to 'true'
+      tls: 'true', // Changed from true to 'true'
+      tlsAllowInvalidCertificates: 'false', // Changed from false to 'false'
+      retryWrites: 'true', // Changed from true to 'true'
       w: 'majority',
-      // Newer MongoDB driver options
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+      // Use string values for newer MongoDB driver options
+      useNewUrlParser: 'true', // Changed from true to 'true'
+      useUnifiedTopology: 'true', // Changed from true to 'true'
     };
 
     cached.promise = mongoose.connect(MONGODB_URI, opts)
@@ -125,8 +126,7 @@ mongoose.connection.on("error", (err) => {
   // Handle specific SSL/TLS errors
   if (err.message.includes('SSL') || err.message.includes('TLS')) {
     console.error("🔐 SSL/TLS Error detected");
-    console.error("💡 Try adding ?tls=true&ssl=true to your connection string");
-    console.error("💡 Or check your MongoDB Atlas SSL/TLS settings");
+    console.error("💡 Try using string values ('true'/'false') instead of booleans");
   }
 });
 
