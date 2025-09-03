@@ -1,21 +1,68 @@
-
+"use client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import HomeNavbar from "@/MainComponent/HomeNavbar";
 import Link from "next/link";
 
 export default function SignIn() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/customer-signin-api", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Store authentication token if provided
+        if (data.token) {
+          localStorage.setItem("authToken", data.token);
+          if (rememberMe) {
+            localStorage.setItem("rememberMe", "true");
+          }
+        }
+        
+        // Redirect based on user role or to dashboard
+        router.push(data.redirectTo || "/customer-dashboard");
+      } else {
+        setError(data.error || "Login failed. Please check your credentials.");
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("Network error. Please try again later.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <>
       <HomeNavbar />
       <div className="min-vh-100 bg-light">
-        <form>
+        <form onSubmit={handleSubmit}>
           <div className="d-flex align-items-center justify-content-center min-vh-100 p-4">
             <div className="w-100" style={{ maxWidth: "500px" }}>
               <div className="text-center mb-4">
                 <h2 className="fw-bold text-dark">Sign in with</h2>
               </div>
 
+              {/* Social login buttons */}
               <div className="d-grid gap-3">
-                {/* Google */}
                 <button
                   type="button"
                   className="btn btn-outline-primary d-flex align-items-center justify-content-between px-3 py-2"
@@ -32,7 +79,6 @@ export default function SignIn() {
                   ></div>
                 </button>
 
-                {/* Apple */}
                 <button
                   type="button"
                   className="btn btn-outline-primary d-flex align-items-center justify-content-between px-3 py-2"
@@ -46,7 +92,6 @@ export default function SignIn() {
                   </div>
                 </button>
 
-                {/* Microsoft */}
                 <button
                   type="button"
                   className="btn btn-outline-primary d-flex align-items-center justify-content-between px-3 py-2"
@@ -72,14 +117,24 @@ export default function SignIn() {
                 </div>
               </div>
 
+              {/* Error message */}
+              {error && (
+                <div className="alert alert-danger" role="alert">
+                  {error}
+                </div>
+              )}
+
               {/* Email and Password Inputs */}
               <div className="mb-3">
                 <input
                   type="email"
                   name="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                   placeholder="Email"
                   className="form-control form-control-lg"
+                  disabled={isLoading}
                 />
               </div>
 
@@ -87,9 +142,12 @@ export default function SignIn() {
                 <input
                   type="password"
                   name="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                   placeholder="Password"
                   className="form-control form-control-lg"
+                  disabled={isLoading}
                 />
               </div>
 
@@ -99,12 +157,15 @@ export default function SignIn() {
                     type="checkbox"
                     className="form-check-input"
                     id="remember"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    disabled={isLoading}
                   />
                   <label
                     className="form-check-label text-muted small"
                     htmlFor="remember"
                   >
-                    Remind me later
+                    Remember me
                   </label>
                 </div>
                 <Link
@@ -116,20 +177,30 @@ export default function SignIn() {
               </div>
 
               {/* Submit Button */}
-              <Link href="/admin-dashboard" />
-              <button type="submit" className="btn btn-primary w-100 btn-lg">
-                Continue
+              <button 
+                type="submit" 
+                className="btn btn-primary w-100 btn-lg"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Signing in...
+                  </>
+                ) : (
+                  "Continue"
+                )}
               </button>
 
               {/* Bottom Message */}
               <div className="text-center mt-4">
                 <small className="text-muted">
-                  Do you already have an existing{" "}
+                  Don't have an account?{" "}
                   <Link
-                    href="/register"
+                    href="/customer-signup"
                     className="text-primary text-decoration-none"
                   >
-                    account?
+                    Sign up
                   </Link>
                 </small>
               </div>

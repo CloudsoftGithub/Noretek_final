@@ -1,7 +1,7 @@
-// app/api/customer-signin-api/route.js
+// /src/app/api/customer-signin-api/route.js
 import { connectDB } from "@/lib/mongodb";
 import CustomerTable from "@/models/CustomerTable";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 // Rate limiting setup
@@ -10,7 +10,7 @@ const MAX_ATTEMPTS = 5;
 const LOCKOUT_TIME = 15 * 60 * 1000; // 15 minutes
 
 export async function POST(req) {
-  const clientIP = req.headers.get('x-forwarded-for') || 'unknown';
+  const clientIP = req.headers.get('x-forwarded-for') || req.ip || 'unknown';
   const now = Date.now();
   
   // Check rate limiting
@@ -25,7 +25,7 @@ export async function POST(req) {
           status: 429,
           headers: {
             'Content-Type': 'application/json',
-            'Retry-After': '900' // 15 minutes in seconds
+            'Retry-After': '900'
           }
         }
       );
@@ -33,11 +33,16 @@ export async function POST(req) {
   }
 
   try {
+    console.log('Attempting to connect to database...');
     await connectDB();
+    console.log('Database connected successfully');
+    
     const { email, password } = await req.json();
+    console.log('Login attempt for email:', email);
 
     // Input validation
     if (!email || !password) {
+      console.log('Missing email or password');
       return new Response(
         JSON.stringify({ message: "Email and password are required" }),
         { 
@@ -50,6 +55,7 @@ export async function POST(req) {
     // Email format validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
+      console.log('Invalid email format:', email);
       return new Response(
         JSON.stringify({ message: "Invalid email format" }),
         { 
@@ -60,18 +66,20 @@ export async function POST(req) {
     }
 
     // Find customer with case-insensitive email
+    console.log('Searching for customer with email:', email);
     const customer = await CustomerTable.findOne({ 
       email: { $regex: new RegExp(`^${email}$`, 'i') } 
-    }).select('+password'); // Ensure password is included
+    }).select('+password');
 
     if (!customer) {
+      console.log('Customer not found for email:', email);
+      
       // Update rate limiting
       const attempts = loginAttempts.get(clientIP) || { count: 0, lastAttempt: 0 };
       attempts.count += 1;
       attempts.lastAttempt = now;
       loginAttempts.set(clientIP, attempts);
       
-      // Log failed attempt (in production, use a proper logging service)
       console.warn(`Failed login attempt for email: ${email} from IP: ${clientIP}`);
       
       return new Response(
@@ -83,11 +91,38 @@ export async function POST(req) {
       );
     }
 
-    // Check if account is locked or suspended
-    if (customer.accountStatus === 'locked' || customer.accountStatus === 'suspended') {
+    console.log('Customer found:', customer.email);
+    console.log('Checking account status:', customer.accountStatus);
+
+    // Check if account is locked
+    if (customer.accountStatus === 'locked') {
+      if (customer.lockUntil && customer.lockUntil > new Date()) {
+        const timeLeft = Math.ceil((customer.lockUntil - new Date()) / 60000);
+        console.log('Account locked, time left:', timeLeft, 'minutes');
+        return new Response(
+          JSON.stringify({ 
+            message: `Account is temporarily locked. Please try again in ${timeLeft} minutes.` 
+          }),
+          { 
+            status: 403,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
+      } else {
+        // Reset lock if time has passed
+        console.log('Resetting account lock');
+        customer.accountStatus = 'active';
+        customer.failedLoginAttempts = 0;
+        customer.lockUntil = null;
+      }
+    }
+
+    // Check if account is suspended
+    if (customer.accountStatus === 'suspended') {
+      console.log('Account suspended for email:', email);
       return new Response(
         JSON.stringify({ 
-          message: "Account is temporarily locked. Please contact support." 
+          message: "Account is suspended. Please contact support." 
         }),
         { 
           status: 403,
@@ -97,13 +132,19 @@ export async function POST(req) {
     }
 
     // Verify password
+    console.log('Verifying password...');
     const match = await bcrypt.compare(password, customer.password);
+    
     if (!match) {
+      console.log('Password does not match for email:', email);
+      
       // Update failed login count
       customer.failedLoginAttempts = (customer.failedLoginAttempts || 0) + 1;
+      console.log('Failed login attempts:', customer.failedLoginAttempts);
       
       // Lock account after too many failed attempts
       if (customer.failedLoginAttempts >= MAX_ATTEMPTS) {
+        console.log('Locking account due to too many failed attempts');
         customer.accountStatus = 'locked';
         customer.lockUntil = new Date(Date.now() + LOCKOUT_TIME);
       }
@@ -116,7 +157,6 @@ export async function POST(req) {
       attempts.lastAttempt = now;
       loginAttempts.set(clientIP, attempts);
       
-      // Log failed attempt
       console.warn(`Failed password attempt for user: ${customer.email} from IP: ${clientIP}`);
       
       return new Response(
@@ -128,15 +168,20 @@ export async function POST(req) {
       );
     }
 
+    console.log('Password verified successfully');
+
     // Reset failed login attempts on successful login
     if (customer.failedLoginAttempts > 0) {
+      console.log('Resetting failed login attempts');
       customer.failedLoginAttempts = 0;
       customer.accountStatus = 'active';
-      customer.lockUntil = undefined;
+      customer.lockUntil = null;
+      customer.lastLogin = new Date();
       await customer.save();
     }
 
     // Generate JWT token
+    console.log('Generating JWT token');
     const token = jwt.sign(
       { 
         userId: customer._id, 
@@ -152,7 +197,7 @@ export async function POST(req) {
 
     // Prepare response data (exclude sensitive information)
     const userData = {
-      id: customer._id,
+      id: customer._id.toString(),
       email: customer.email,
       name: customer.name,
       role: customer.role,
@@ -165,7 +210,7 @@ export async function POST(req) {
         message: "Login successful",
         user: userData,
         token: token,
-        expiresIn: 86400 // 24 hours in seconds
+        expiresIn: 86400
       }),
       { 
         status: 200,
@@ -189,6 +234,37 @@ export async function POST(req) {
       }
     );
   }
+}
+
+// Export other HTTP methods
+export async function GET() {
+  return new Response(
+    JSON.stringify({ error: 'Method not allowed' }),
+    { 
+      status: 405,
+      headers: { 'Content-Type': 'application/json' }
+    }
+  );
+}
+
+export async function PUT() {
+  return new Response(
+    JSON.stringify({ error: 'Method not allowed' }),
+    { 
+      status: 405,
+      headers: { 'Content-Type': 'application/json' }
+    }
+  );
+}
+
+export async function DELETE() {
+  return new Response(
+    JSON.stringify({ error: 'Method not allowed' }),
+    { 
+      status: 405,
+      headers: { 'Content-Type': 'application/json' }
+    }
+  );
 }
 
 // Clean up old login attempts periodically
