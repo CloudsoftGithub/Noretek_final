@@ -1,4 +1,6 @@
 
+@import "bootstrap/dist/css/bootstrap.min.css";
+@import "bootstrap-icons";
 :root{
   --testColor:#040416;
   --hoverColor: #bbbbec;
