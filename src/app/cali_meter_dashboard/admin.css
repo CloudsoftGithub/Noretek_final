@@ -1,3 +1,5 @@
+@import "bootstrap/dist/css/bootstrap.min.css";
+@import "bootstrap-icons";
 
 :root{
   --testColor:#0b0c27;

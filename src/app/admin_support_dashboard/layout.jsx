@@ -2,7 +2,7 @@
 
 import "./admin.css";
 import { useEffect } from "react";
-
+import "bootstrap/dist/css/bootstrap.min.css";
 {
   /**
 export const metadata = {
