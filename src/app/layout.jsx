@@ -6,7 +6,7 @@ import { useEffect } from "react";
 
 // Import Bootstrap CSS here instead of in CSS files
 import "bootstrap/dist/css/bootstrap.min.css";
-
+import "bootstrap-icons/font/bootstrap-icons.css";
 
 
 
