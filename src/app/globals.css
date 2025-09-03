@@ -62,7 +62,7 @@ body {
   align-items: center;
   padding: 4px 0 8px 20px;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 600px;
   color: var(--praColor);
   white-space: nowrap;
   transition: all 0.3s ease;
@@ -125,7 +125,7 @@ body {
 
 .mainPage .uper h1 {
   font-size: 3.5rem;
-  font-weight: 800;
+  font-weight: 800px;
   color: var(--WhiteColor);
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
@@ -134,7 +134,7 @@ body {
   color: var(--WhiteColor);
   font-size: 1.5rem;
   margin-top: 1rem;
-  font-weight: 400;
+  font-weight: 400px;
 }
 
 .mainPage .uper .btn-get-started,
@@ -143,7 +143,7 @@ body {
   padding: 15px 40px;
   border-radius: 4px;
   transition: all 0.4s ease;
-  font-weight: 600;
+  font-weight: 600px;
   letter-spacing: 1px;
   display: inline-block;
   text-align: center;
@@ -240,7 +240,7 @@ body {
 .cardList .row .stateBody a {
   color: var(--softColor);
   font-size: 1.2rem;
-  font-weight: 600;
+  font-weight: 600px;
   text-decoration: none;
   display: block;
   width: 100%;
@@ -258,7 +258,7 @@ body {
 
 .titleColor {
   color: var(--ppColor) !important;
-  font-weight: 700;
+  font-weight: 700px;
 }
 
 .imgRound {

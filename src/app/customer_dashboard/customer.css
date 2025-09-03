@@ -9,6 +9,7 @@
   --praColor: #023e8a;
   --ppColor: #023e8a;
   --gradientBg: #b7e1fda7;
+  --WhiteColor:#ffff;
 }
 *{
   font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
@@ -151,7 +152,7 @@ body {
 }
 .titleColor {
   color: var(--ppColor) !important;
-  font-weight: 700px;
+  font-weight: 700;
 }
 .con{
   background:  var(--gradientBg);

@@ -29,7 +29,7 @@ body {
 .mainPage .uper h1 {
   margin: 0;
   font-size: 48px;
-  font-weight: 700;
+  font-weight: 700px;
   color: var(--testColor);
 }
 
@@ -56,7 +56,7 @@ body {
 
 .mainPage .uper .btn-get-started span {
   font-family: "Nunito", sans-serif;
-  font-weight: 600;
+  font-weight: 600px;
   font-size: 20px;
   letter-spacing: 2px;
 }
