@@ -1,10 +1,11 @@
 // app/payment-success/page.jsx
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-export default function PaymentSuccess() {
+// Create a separate component that uses useSearchParams
+function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [paymentData, setPaymentData] = useState(null);
@@ -326,5 +327,30 @@ export default function PaymentSuccess() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Main component with Suspense boundary
+export default function PaymentSuccess() {
+  return (
+    <Suspense fallback={
+      <div className="container py-5">
+        <div className="row justify-content-center">
+          <div className="col-md-8 col-lg-6">
+            <div className="card shadow-lg">
+              <div className="card-body p-5 text-center">
+                <div className="spinner-border text-primary mb-3" style={{ width: '3rem', height: '3rem' }}>
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+                <h4 className="text-primary">Loading Payment Details...</h4>
+                <p className="text-muted">Please wait while we process your payment information.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <PaymentSuccessContent />
+    </Suspense>
   );
 }

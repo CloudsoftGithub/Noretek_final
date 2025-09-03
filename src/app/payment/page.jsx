@@ -1,10 +1,11 @@
 // src/app/payment-verification/page.jsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
-export default function PaymentVerification() {
+// Create a separate component that uses useSearchParams
+function PaymentVerificationContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [status, setStatus] = useState('verifying');
@@ -151,5 +152,33 @@ export default function PaymentVerification() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Main component with Suspense boundary
+export default function PaymentVerification() {
+  return (
+    <Suspense fallback={
+      <div className="container py-5">
+        <div className="row justify-content-center">
+          <div className="col-md-8 col-lg-6">
+            <div className="card shadow-lg border-0">
+              <div className="card-header bColor text-light text-center">
+                <h2 className="h3 mb-0">Payment Status</h2>
+              </div>
+              <div className="card-body p-5 text-center">
+                <div className="spinner-border titleColor mb-3" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+                <h4 className="titleColor">Loading Payment Verification...</h4>
+                <p className="text-muted">Please wait while we prepare to verify your payment.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <PaymentVerificationContent />
+    </Suspense>
   );
 }

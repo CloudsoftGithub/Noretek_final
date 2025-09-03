@@ -28,7 +28,12 @@ export function getClientPromise() {
 
   const options = {
     maxPoolSize: 10,
-    serverSelectionTimeoutMS: 5000,
+    serverSelectionTimeoutMS: 10000, // Increased timeout
+    socketTimeoutMS: 45000,
+    ssl: true,
+    tlsAllowInvalidCertificates: false,
+    retryWrites: true,
+    w: 'majority'
   };
 
   if (process.env.NODE_ENV === "development") {
@@ -60,17 +65,42 @@ async function connectDB() {
     const opts = {
       bufferCommands: false,
       maxPoolSize: 10,
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 10000, // Increased timeout
       socketTimeoutMS: 45000,
+      // SSL/TLS configuration for MongoDB Atlas
+      ssl: true,
+      tls: true,
+      tlsAllowInvalidCertificates: false,
+      retryWrites: true,
+      w: 'majority',
+      // Newer MongoDB driver options
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
     };
 
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
-      console.log(
-        "✅ MongoDB (Mongoose) Connected Successfully:",
-        MONGODB_URI.replace(/:[^:]*@/, ":****@") // mask password
-      );
-      return mongoose;
-    });
+    cached.promise = mongoose.connect(MONGODB_URI, opts)
+      .then((mongoose) => {
+        console.log(
+          "✅ MongoDB (Mongoose) Connected Successfully:",
+          MONGODB_URI.replace(/:[^:]*@/, ":****@") // mask password
+        );
+        return mongoose;
+      })
+      .catch((error) => {
+        console.error("❌ MongoDB connection failed:", error.message);
+        
+        // More detailed error logging
+        if (error.name === 'MongoServerSelectionError') {
+          console.error("💡 Tip: Check if your IP is whitelisted in MongoDB Atlas");
+          console.error("💡 Tip: Check if your MongoDB URI is correct");
+        } else if (error.message.includes('SSL')) {
+          console.error("💡 SSL/TLS connection issue detected");
+          console.error("💡 Tip: Try updating your MongoDB driver or checking TLS settings");
+        }
+        
+        cached.promise = null;
+        throw new Error(`Database connection failed: ${error.message}`);
+      });
   }
 
   try {
@@ -91,10 +121,22 @@ mongoose.connection.on("connected", () => {
 
 mongoose.connection.on("error", (err) => {
   console.error("❌ Mongoose connection error:", err);
+  
+  // Handle specific SSL/TLS errors
+  if (err.message.includes('SSL') || err.message.includes('TLS')) {
+    console.error("🔐 SSL/TLS Error detected");
+    console.error("💡 Try adding ?tls=true&ssl=true to your connection string");
+    console.error("💡 Or check your MongoDB Atlas SSL/TLS settings");
+  }
 });
 
 mongoose.connection.on("disconnected", () => {
   console.log("⚠️ Mongoose disconnected from DB");
+});
+
+// Handle connection errors that occur after initial connection
+mongoose.connection.on('close', () => {
+  console.log('🔌 MongoDB connection closed');
 });
 
 // Graceful shutdown
@@ -109,6 +151,33 @@ process.on("SIGINT", async () => {
   }
 });
 
+// Handle uncaught exceptions
+process.on('uncaughtException', async (error) => {
+  console.error('💥 Uncaught Exception:', error);
+  if (mongoose.connection.readyState === 1) {
+    await mongoose.connection.close();
+  }
+  process.exit(1);
+});
+
+// Handle unhandled rejections
+process.on('unhandledRejection', async (reason, promise) => {
+  console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
+  if (mongoose.connection.readyState === 1) {
+    await mongoose.connection.close();
+  }
+  process.exit(1);
+});
+
 // ✅ Export both
 export default connectDB;     // for Mongoose models
 export { connectDB };         // named export (optional)
+
+// Helper function to check connection status
+export function getConnectionStatus() {
+  return {
+    readyState: mongoose.connection.readyState,
+    state: mongoose.STATES[mongoose.connection.readyState],
+    connected: mongoose.connection.readyState === 1
+  };
+}

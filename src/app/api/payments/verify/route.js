@@ -2,14 +2,14 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Payment from "@/models/Payment";
-
+import { getConnectionStatus } from '@/lib/mongodb';
 export async function GET(request) {
   await dbConnect();
 
   try {
     const { searchParams } = new URL(request.url);
     const reference = searchParams.get("reference") || searchParams.get("trxref");
-
+    console.log('DB Connection status:', getConnectionStatus());
     if (!reference) {
       return NextResponse.json(
         { success: false, message: "Reference is required" },

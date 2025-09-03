@@ -1,12 +1,19 @@
 // src/app/api/payments/history/route.js
 import { NextResponse } from "next/server";
 import { paymentQueries } from "@/lib/paymentQueries";
+import { getConnectionStatus } from '@/lib/mongodb';
+
+// ✅ Add these lines to mark the route as dynamic and specify runtime
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const email = searchParams.get("email");
     const meterId = searchParams.get("meterId");
+    
+    console.log('DB Connection status:', getConnectionStatus());
 
     if (!email && !meterId) {
       return NextResponse.json(

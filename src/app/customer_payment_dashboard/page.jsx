@@ -1,10 +1,11 @@
 // src/app/customer_payment_dashboard/page.jsx
 'use client';
 import PaymentForm from '@/MainComponent/PaymentForm';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
-export default function CustomerPaymentDashboard() {
+// Create a separate component that uses useSearchParams
+function CustomerPaymentDashboardContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [user, setUser] = useState(null);
@@ -23,7 +24,7 @@ export default function CustomerPaymentDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // ✅ Check if we&apos;re in browser environment first
+        // ✅ Check if we're in browser environment first
         if (typeof window === 'undefined') {
           setLoading(false);
           return;
@@ -549,7 +550,7 @@ export default function CustomerPaymentDashboard() {
   const formatToken = (token) => {
     if (!token) return 'N/A';
     
-    // Remove any non-numeric characters and ensure it&apos;s exactly 20 digits
+    // Remove any non-numeric characters and ensure it's exactly 20 digits
     const numericToken = token.replace(/\D/g, '').substring(0, 20);
     
     // Pad with zeros if needed to make it exactly 20 digits
@@ -635,9 +636,9 @@ export default function CustomerPaymentDashboard() {
                   <div className="alert alert-info mt-4">
                     <h6 className="mb-2">How to use your token:</h6>
                     <ol className="mb-0 small">
-                      <li>Press the &apos;Enter&apos; button on your meter</li>
+                      <li>Press the 'Enter' button on your meter</li>
                       <li>Enter the 20-digit token when prompted</li>
-                      <li>Press &apos;Enter&apos; again to confirm</li>
+                      <li>Press 'Enter' again to confirm</li>
                       <li>Wait for the meter to validate and load the units</li>
                     </ol>
                   </div>
@@ -724,9 +725,9 @@ export default function CustomerPaymentDashboard() {
                   <div className="alert alert-info mt-4">
                     <h6 className="mb-2">How to use your token:</h6>
                     <ol className="mb-0 small">
-                      <li>Press the &apos;Enter&apos; button on your meter</li>
+                      <li>Press the 'Enter' button on your meter</li>
                       <li>Enter the 20-digit token when prompted</li>
-                      <li>Press &apos;Enter&apos; again to confirm</li>
+                      <li>Press 'Enter' again to confirm</li>
                       <li>Wait for the meter to validate and load the units</li>
                     </ol>
                   </div>
@@ -946,5 +947,21 @@ export default function CustomerPaymentDashboard() {
       {/* Add Font Awesome for icons */}
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     </div>
+  );
+}
+
+// Main component with Suspense boundary
+export default function CustomerPaymentDashboard() {
+  return (
+    <Suspense fallback={
+      <div className="container py-5 text-center">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+        <p className="mt-3">Loading payment dashboard...</p>
+      </div>
+    }>
+      <CustomerPaymentDashboardContent />
+    </Suspense>
   );
 }
