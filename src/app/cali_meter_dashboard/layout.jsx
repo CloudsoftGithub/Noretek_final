@@ -9,9 +9,9 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 
 export default function RootLayout({ children }) {
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      import("bootstrap/dist/js/bootstrap.bundle.min.js");
-    }
+
+    import("bootstrap/dist/js/bootstrap.bundle.min.js");
+
   }, []);
 
   return (
